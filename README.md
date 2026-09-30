@@ -24,7 +24,7 @@ pnpm dev --host 127.0.0.1 --port 4173
 - `src/hash-worker.ts` — streams the original local `File` through SHA-256 in a Web Worker.
 - `src/lib/proof-core.mjs` — canonical receipt-manifest binding and local receipt verification.
 - `src/lib/chain.ts` — canonical Chain 1404 read quorum. It excludes bdagscan and blockdag.works.
-- `src/lib/wallet.ts` — injected-wallet registration. It is intentionally unavailable until an approved deployed registry address is supplied through `VITE_DAGIT_REGISTRY_ADDRESS`.
+- `src/lib/wallet.ts` — injected-wallet registration and a self-custody launch action. Regular proof registration remains unavailable until an approved deployed registry address is supplied through `VITE_DAGIT_REGISTRY_ADDRESS`.
 
 ## Read quorum
 
@@ -33,3 +33,7 @@ Wallet configuration uses `https://rpc.blockdag.engineering/`. Verification uses
 ## Release boundary
 
 `pnpm release:preflight` runs local build, receipt tests, contract tests, local transaction demo, and a live read-only RPC quorum check. It never deploys a contract or sends a mainnet transaction. See [docs/RELEASE-GATES.md](docs/RELEASE-GATES.md).
+
+## Launching the registry
+
+Open `https://dagit.macula.co.za/?launch=1` in a browser profile containing a self-custody Chain 1404 wallet. The wallet alone signs and pays the one-time deployment. After the transaction is mined, set the resulting public address as `VITE_DAGIT_REGISTRY_ADDRESS` in the Vercel production environment, deploy the app again, then independently verify the address, bytecode, and first wallet registration before announcing proof anchoring as live.

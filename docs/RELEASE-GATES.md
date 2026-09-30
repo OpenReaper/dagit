@@ -13,7 +13,7 @@
 - No wallet transaction has been signed for Chain 1404.
 - No wallet-connect provider/project ID is configured.
 - No independent audit or legal approval exists.
-- No public hosting/domain/CSP configuration has been created.
+- No production registry address is configured and no Chain 1404 registry has been deployed.
 
 ## Required before a public deployment
 

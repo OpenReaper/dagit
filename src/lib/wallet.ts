@@ -1,6 +1,7 @@
 import { createPublicClient, createWalletClient, custom, http, type Address, type Hex } from 'viem';
 import { CHAIN_1404 } from './chain';
 import { registryAbi } from './registry-abi';
+import { registryBytecode } from './registry-bytecode';
 
 type Eip1193Provider = { request: (request: { method: string; params?: unknown[] | object }) => Promise<unknown> };
 declare global { interface Window { ethereum?: Eip1193Provider } }
@@ -44,4 +45,16 @@ export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
   const receipt = await publicClient.waitForTransactionReceipt({ hash: transactionHash, confirmations: 1 });
   if (receipt.status !== 'success') throw new Error('The wallet transaction was mined but reverted. No proof was recorded.');
   return { account, registry, transactionHash, receipt };
+}
+
+/** Deploys the immutable public registry from the connected user's own wallet. */
+export async function deployRegistry() {
+  const { account } = await connectWallet();
+  const provider = window.ethereum!;
+  const wallet = createWalletClient({ chain: bdagChain, transport: custom(provider) });
+  const transactionHash = await wallet.deployContract({ account, abi: registryAbi, bytecode: registryBytecode });
+  const publicClient = createPublicClient({ chain: bdagChain, transport: http(CHAIN_1404.rpcUrls[0]) });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash: transactionHash, confirmations: 1 });
+  if (receipt.status !== 'success' || !receipt.contractAddress) throw new Error('The deployment transaction did not create a registry.');
+  return { account, transactionHash, registry: receipt.contractAddress, receipt };
 }
