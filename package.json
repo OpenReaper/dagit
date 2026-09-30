@@ -1,0 +1,39 @@
+{
+  "name": "dagit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "contracts:compile": "node scripts/compile-contracts.mjs",
+    "test:contracts": "npm run contracts:compile && node --test test/contracts.test.mjs",
+    "test:unit": "node --test test/proof-receipt.test.mjs test/rpc-quorum.test.mjs test/privacy-boundary.test.mjs",
+    "demo": "npm run contracts:compile && node scripts/local-proof-demo.mjs",
+    "check:quorum": "node scripts/check-rpc-quorum.mjs",
+    "release:preflight": "npm run check && npm run check:quorum && node scripts/release-preflight.mjs",
+    "check": "npm run build && npm run test:unit && npm run test:contracts && npm run demo"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.8.0",
+    "qrcode": "1.5.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "viem": "2.56.8"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.8",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "5.0.4",
+    "ganache": "7.9.2",
+    "solc": "0.8.30",
+    "typescript": "5.9.3",
+    "vite": "7.1.9"
+  }
+}
