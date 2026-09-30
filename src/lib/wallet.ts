@@ -15,11 +15,11 @@ export function configuredRegistry(): Address | null {
   return value && /^0x[0-9a-fA-F]{40}$/.test(value) ? value as Address : null;
 }
 
-export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
+export type ConnectedWallet = { account: Address };
+
+export async function connectWallet(): Promise<ConnectedWallet> {
   if (!window.ethereum) throw new Error('No injected wallet was found. Install or unlock a compatible wallet.');
   const provider = window.ethereum;
-  const registry = configuredRegistry();
-  if (!registry) throw new Error('DAGIT has no approved registry address yet. Local proof demo is available; production registration is intentionally disabled.');
   const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
   if (!accounts[0]) throw new Error('Wallet returned no account.');
   const chainId = await provider.request({ method: 'eth_chainId' }) as string;
@@ -30,10 +30,18 @@ export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
       await provider.request({ method: 'wallet_addEthereumChain', params: [{ ...CHAIN_1404 }] });
     }
   }
+  return { account: accounts[0] as Address };
+}
+
+export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
+  const registry = configuredRegistry();
+  if (!registry) throw new Error('Proof anchoring is not live yet. This demo will not send a transaction.');
+  const { account } = await connectWallet();
+  const provider = window.ethereum!;
   const wallet = createWalletClient({ chain: bdagChain, transport: custom(provider) });
-  const transactionHash = await wallet.writeContract({ account: accounts[0] as Address, address: registry, abi: registryAbi, functionName: 'register', args: [digest, manifestDigest] });
+  const transactionHash = await wallet.writeContract({ account, address: registry, abi: registryAbi, functionName: 'register', args: [digest, manifestDigest] });
   const publicClient = createPublicClient({ chain: bdagChain, transport: http(CHAIN_1404.rpcUrls[0]) });
   const receipt = await publicClient.waitForTransactionReceipt({ hash: transactionHash, confirmations: 1 });
   if (receipt.status !== 'success') throw new Error('The wallet transaction was mined but reverted. No proof was recorded.');
-  return { account: accounts[0] as Address, registry, transactionHash, receipt };
+  return { account, registry, transactionHash, receipt };
 }
