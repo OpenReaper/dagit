@@ -20,7 +20,7 @@ The user controls both the original file and the wallet transaction. DAGIT is no
 
 ## Operating Context
 
-The consumer journey is: choose a local file, create a local fingerprint, connect a Chain 1404 wallet, review the wallet's BDAG network fee, anchor the proof when the production registry is approved, and save a portable receipt. A verifier later supplies the original file and receipt.
+The consumer journey is: choose a local file, create a local fingerprint, choose optional version context, connect a Chain 1404 wallet, review the wallet's BDAG network fee, anchor the proof, and save a portable Proof Pack receipt. A second person opens a QR or private proof link, supplies their own copy of the original file, and can optionally add a wallet acknowledgement to that same receipt.
 
 ## Capabilities and Constraints
 
@@ -47,3 +47,5 @@ Name: DAGIT. Voice: plain, calm, privacy-first, and direct. The user explicitly 
 2. The user approves every wallet action.
 3. Payment is only the BDAG network fee shown by the wallet.
 4. A receipt must remain useful without a DAGIT account.
+5. The portable QR receipt stays in the URL fragment; it is not stored by DAGIT.
+6. A wallet acknowledgement is cryptographic confirmation of a receipt, not a legal signature, identity check, ownership claim, or statement that the file is true.

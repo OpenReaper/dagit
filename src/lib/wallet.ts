@@ -2,6 +2,7 @@ import { createPublicClient, createWalletClient, custom, http, type Address, typ
 import { CHAIN_1404 } from './chain';
 import { registryAbi } from './registry-abi';
 import { proxyBytecode, proxyConstructorAbi, registryBytecode } from './deployment-artifacts';
+import { acknowledgementTypedData, type Receipt } from './proof-core';
 
 type Eip1193Provider = { request: (request: { method: string; params?: unknown[] | object }) => Promise<unknown> };
 declare global { interface Window { ethereum?: Eip1193Provider } }
@@ -47,6 +48,23 @@ export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
   const receipt = await publicClient.waitForTransactionReceipt({ hash: transactionHash, confirmations: 1 });
   if (receipt.status !== 'success') throw new Error('The wallet transaction was mined but reverted. No proof was recorded.');
   return { account, registry, transactionHash, receipt };
+}
+
+/** Requests a non-transaction EIP-712 acknowledgement. The signature stays in the portable receipt. */
+export async function acknowledgeReceipt(receipt: Receipt) {
+  const { account } = await connectWallet();
+  if (receipt.chain?.registrant?.toLowerCase() === account.toLowerCase()) {
+    throw new Error('Use the other party’s wallet for a bilateral acknowledgement.');
+  }
+  const signedAt = new Date().toISOString();
+  const typed = acknowledgementTypedData(receipt, account, signedAt);
+  const provider = window.ethereum!;
+  const signature = await provider.request({
+    method: 'eth_signTypedData_v4',
+    params: [account, JSON.stringify({ domain: typed.domain, types: typed.types, primaryType: typed.primaryType, message: typed.message })]
+  }) as Hex;
+  if (!/^0x[0-9a-fA-F]{130}$/.test(signature)) throw new Error('The wallet did not return a valid acknowledgement signature.');
+  return { signer: account, signature, signedAt };
 }
 
 /** Deploys UUPS implementation and initialized ERC-1967 proxy from the approved owner wallet. */

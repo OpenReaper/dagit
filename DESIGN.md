@@ -17,7 +17,8 @@ DAGIT is a credibility-first proof product. It earns trust through visible, veri
 - Lead public pages with a plain promise and one clear next action.
 - Place the four product truths immediately after the hero: local file, self-custody, on-chain proof, portable receipt.
 - Render live registry values only from configuration or chain reads; never use fictional counters, partner marks, certifications, or claims.
-- Keep the proof workspace operationally simple: choose file, create fingerprint, connect wallet, approve proof, retain receipt.
+- Keep the proof workspace operationally simple: choose file, create fingerprint, add optional version context, connect wallet, approve proof, and retain a Proof Pack receipt.
+- Make the shared-version outcome explicit: create a Proof Pack, share its private QR or link, then let the recipient verify their own file before choosing a wallet acknowledgement.
 - `/admin` inherits the blue system but remains operational and Cloudflare Access protected.
 
 ## Responsive and accessibility
