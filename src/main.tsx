@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import { hashFileLocally } from './lib/hash-file';
 import { createUnsignedReceipt, verifyReceiptAgainstDigest } from './lib/proof-core';
 import { readProofByQuorum } from './lib/chain';
-import { configuredRegistry, connectAndRegister, connectWallet, deployRegistry } from './lib/wallet';
+import { configuredRegistry, connectAndRegister, connectWallet, DAGIT_UPGRADE_AUTHORITY, deployRegistry } from './lib/wallet';
 import './style.css';
 
 type Receipt = ReturnType<typeof createUnsignedReceipt> & { chain?: { chainId: number; registry: string; transactionHash: string; blockNumber: string; blockHash: string; registrant: string; confirmations: number } };
@@ -86,7 +86,7 @@ function App() {
     setLaunchStatus('Your wallet will show the one-time Chain 1404 deployment fee before you approve.');
     try {
       const result = await deployRegistry();
-      setLaunchStatus(`Registry deployed: ${result.registry}. Transaction: ${result.transactionHash}. Send this address to DAGIT configuration before telling users proof anchoring is available.`);
+      setLaunchStatus(`Upgradeable registry proxy deployed: ${result.registry}. Proxy transaction: ${result.transactionHash}. Implementation: ${result.implementation}. Send the proxy address to DAGIT configuration before telling users proof anchoring is available.`);
     } catch (error) { setLaunchStatus(error instanceof Error ? error.message : 'Registry deployment did not complete.'); }
     finally { setLaunching(false); }
   }
@@ -127,7 +127,7 @@ function App() {
     <section className="verify-section" id="verify" aria-labelledby="verify-title"><div><p className="overline">VERIFY A FILE</p><h2 id="verify-title">Check the original,<br/>any time.</h2><p>Choose the original file and its DAGIT receipt. A changed file will not match.</p></div><div className="verify-form"><label>Proof receipt<input type="file" accept="application/json" onChange={async (event) => { const candidate = event.target.files?.[0]; if (!candidate) return; try { setVerifyReceipt(JSON.parse(await candidate.text()) as Receipt); setVerifyStatus('Receipt ready. Now choose the original file.'); } catch { setVerifyStatus('Choose a valid DAGIT receipt file.'); } }}/></label><label>Original file<input type="file" onChange={(event) => setVerifyFile(event.target.files?.[0] ?? null)}/></label><button className="light-action" onClick={verify} disabled={!verifyFile || !verifyReceipt}>Verify file</button>{verifyStatus && <p className="verify-status" role="status">{verifyStatus}</p>}</div></section>
 
     <footer><a className="brand" href="#top">DAGIT</a><p>Your file. Your wallet. Your proof.</p><span>Proof records a file fingerprint. It does not establish ownership or authorship.</span></footer>
-    {new URLSearchParams(window.location.search).get('launch') === '1' && <section className="launch-panel" aria-label="DAGIT registry launch"><p className="overline">REGISTRY LAUNCH</p><h2>Deploy the immutable DAGIT registry</h2><p>This is a one-time Chain 1404 contract deployment from your own wallet. DAGIT cannot access your keys. Only approve after you have reviewed the public source.</p><button className="primary-action" onClick={launchRegistry} disabled={launching}>{launching ? 'Waiting for wallet…' : 'Deploy from my wallet'}</button>{launchStatus && <p className="live-status" role="status">{launchStatus}</p>}</section>}
+    {new URLSearchParams(window.location.search).get('launch') === '1' && <section className="launch-panel" aria-label="DAGIT registry launch"><p className="overline">REGISTRY LAUNCH</p><h2>Deploy the upgradeable DAGIT registry</h2><p>This deploys an OpenZeppelin UUPS implementation and an initialized ERC-1967 proxy. Only the configured upgrade authority can sign or authorize upgrades: {DAGIT_UPGRADE_AUTHORITY}.</p><button className="primary-action" onClick={launchRegistry} disabled={launching}>{launching ? 'Waiting for wallet…' : 'Deploy from my wallet'}</button>{launchStatus && <p className="live-status" role="status">{launchStatus}</p>}</section>}
   </main>;
 }
 

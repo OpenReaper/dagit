@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 /// @title DAGITRegistry
-/// @notice Immutable first-registration registry for SHA-256 file digests.
-/// @dev No owner, proxy, token, custody balance, external call, or file data exists in this contract.
-contract DAGITRegistry {
+/// @notice Upgradeable first-registration registry for SHA-256 file digests.
+/// @dev Users interact through an ERC-1967 proxy. No file data, token, NFT, payment flow, or external call exists.
+contract DAGITRegistry is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     error ZeroDigest();
     error ProofAlreadyRegistered(bytes32 digest);
 
@@ -22,6 +26,16 @@ contract DAGITRegistry {
         bytes32 indexed manifestDigest,
         uint16 schemaVersion
     );
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initializes proxy storage and assigns the sole upgrade authority.
+    function initialize(address initialOwner) external initializer {
+        __Ownable_init(initialOwner);
+    }
 
     /// @notice Registers the first observed digest and binds it to a privacy-safe receipt-manifest digest.
     /// @param digest SHA-256 digest of the original, exact file bytes.
@@ -42,4 +56,6 @@ contract DAGITRegistry {
     function proofOf(bytes32 digest) external view returns (Proof memory) {
         return _proofs[digest];
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
