@@ -20,7 +20,47 @@ function downloadReceipt(receipt: Receipt) {
   URL.revokeObjectURL(url);
 }
 
+function AdminConsole() {
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [status, setStatus] = useState('Connect the approved wallet to review the deployment.');
+  const [launching, setLaunching] = useState(false);
+  const isAuthority = wallet?.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase();
+
+  async function connectAdminWallet() {
+    setStatus('Opening your wallet…');
+    try {
+      const connected = await connectWallet();
+      setWallet(connected);
+      setStatus(connected.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase() ? 'Approved upgrade-authority wallet connected.' : `This is not the configured upgrade-authority wallet (${DAGIT_UPGRADE_AUTHORITY}).`);
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Wallet connection did not complete.'); }
+  }
+
+  async function deploy() {
+    setLaunching(true);
+    setStatus('Your wallet will show the implementation transaction first, then the proxy transaction. Review both BDAG fees before approving.');
+    try {
+      const result = await deployRegistry();
+      setStatus(`Deployment complete. Public proxy: ${result.registry}. Proxy transaction: ${result.transactionHash}. Implementation: ${result.implementation}.`);
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Deployment did not complete.'); }
+    finally { setLaunching(false); }
+  }
+
+  return <main className="admin-shell">
+    <nav aria-label="Administration"><a className="brand" href="/">DAGIT</a><span>Deployment administration</span></nav>
+    <section className="admin-card" aria-labelledby="admin-title">
+      <p className="overline">AUTHENTICATED ADMINISTRATION</p>
+      <h1 id="admin-title">Deploy the DAGIT registry</h1>
+      <p>This page is restricted by Cloudflare Access. The registry deploys as an OpenZeppelin UUPS proxy so its public address remains stable while authorized upgrades remain possible.</p>
+      <dl><div><dt>Upgrade authority</dt><dd>{DAGIT_UPGRADE_AUTHORITY}</dd></div><div><dt>Network</dt><dd>Chain 1404 · BDAG</dd></div><div><dt>What you approve</dt><dd>Implementation, then initialized proxy</dd></div></dl>
+      <div className="admin-actions"><button className="secondary-action" onClick={connectAdminWallet}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button><button className="primary-action" onClick={deploy} disabled={!isAuthority || launching}>{launching ? 'Waiting for wallet…' : 'Deploy registry'}</button></div>
+      <p className="admin-status" role="status">{status}</p>
+      <p className="admin-note">DAGIT never receives your private key. The connected wallet signs every transaction and shows the BDAG fee before approval.</p>
+    </section>
+  </main>;
+}
+
 function App() {
+  if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) return <AdminConsole />;
   const [file, setFile] = useState<File | null>(null);
   const [hash, setHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
