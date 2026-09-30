@@ -9,166 +9,37 @@ import './style.css';
 
 type Receipt = ReturnType<typeof createUnsignedReceipt> & { chain?: { chainId: number; registry: string; transactionHash: string; blockNumber: string; blockHash: string; registrant: string; confirmations: number } };
 type Wallet = { account: string };
+type IconName = 'file' | 'shield' | 'wallet' | 'receipt' | 'chain' | 'arrow' | 'check' | 'lock';
 const formatBytes = (size: number) => size < 1_000_000 ? `${(size / 1_000).toFixed(1)} KB` : `${(size / 1_000_000).toFixed(1)} MB`;
 const shortAddress = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
-function downloadReceipt(receipt: Receipt) {
-  const blob = new Blob([JSON.stringify(receipt, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url; anchor.download = 'dagit-proof.json'; anchor.click();
-  URL.revokeObjectURL(url);
+function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
+  const paths: Record<IconName, React.ReactNode> = {
+    file: <><path d="M7 3.5h6l4 4V20.5H7z"/><path d="M13 3.5v4h4M9.5 12h5M9.5 15.5h5"/></>,
+    shield: <><path d="M12 3.5 19 6v5.2c0 4.5-3 7.4-7 9.3-4-1.9-7-4.8-7-9.3V6z"/><path d="m9 12 2 2 4-4"/></>,
+    wallet: <><path d="M4.5 7.5A2.5 2.5 0 0 1 7 5h10.5v14H6.5A2.5 2.5 0 0 1 4 16.5v-7A2.5 2.5 0 0 1 6.5 7H19v4H15a2 2 0 0 0 0 4h4v1.5"/><path d="M15 11h5v4h-5a2 2 0 0 1 0-4Z"/></>,
+    receipt: <><path d="M7 3.5h10v17l-2.5-1.7-2.5 1.7-2.5-1.7L7 20.5z"/><path d="M9.5 8h5M9.5 11.5h5M9.5 15h3"/></>,
+    chain: <><path d="M9.2 14.8 7.5 16.5a3.2 3.2 0 1 1-4.5-4.5l3-3a3.2 3.2 0 0 1 4.5 0"/><path d="m14.8 9.2 1.7-1.7A3.2 3.2 0 1 1 21 12l-3 3a3.2 3.2 0 0 1-4.5 0"/><path d="m8.5 15.5 7-7"/></>,
+    arrow: <><path d="M5 12h13M13 7l5 5-5 5"/></>, check: <path d="m7 12.5 3.1 3L17 8.7"/>, lock: <><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M8.5 10V7.8a3.5 3.5 0 0 1 7 0V10M12 14v2"/></>
+  };
+  return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
+function downloadReceipt(receipt: Receipt) { const blob = new Blob([JSON.stringify(receipt, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'dagit-proof.json'; anchor.click(); URL.revokeObjectURL(url); }
 
 function AdminConsole() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [status, setStatus] = useState('Connect the approved wallet to review the deployment.');
-  const [launching, setLaunching] = useState(false);
-  const isAuthority = wallet?.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase();
-
-  async function connectAdminWallet() {
-    setStatus('Opening your wallet…');
-    try {
-      const connected = await connectWallet();
-      setWallet(connected);
-      setStatus(connected.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase() ? 'Approved upgrade-authority wallet connected.' : `This is not the configured upgrade-authority wallet (${DAGIT_UPGRADE_AUTHORITY}).`);
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'Wallet connection did not complete.'); }
-  }
-
-  async function deploy() {
-    setLaunching(true);
-    setStatus('Your wallet will show the implementation transaction first, then the proxy transaction. Review both BDAG fees before approving.');
-    try {
-      const result = await deployRegistry();
-      setStatus(`Deployment complete. Public proxy: ${result.registry}. Proxy transaction: ${result.transactionHash}. Implementation: ${result.implementation}.`);
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'Deployment did not complete.'); }
-    finally { setLaunching(false); }
-  }
-
-  return <main className="admin-shell">
-    <nav aria-label="Administration"><a className="brand" href="/">DAGIT</a><span>Deployment administration</span></nav>
-    <section className="admin-card" aria-labelledby="admin-title">
-      <p className="overline">AUTHENTICATED ADMINISTRATION</p>
-      <h1 id="admin-title">Deploy the DAGIT registry</h1>
-      <p>This page is restricted by Cloudflare Access. The registry deploys as an OpenZeppelin UUPS proxy so its public address remains stable while authorized upgrades remain possible.</p>
-      <dl><div><dt>Upgrade authority</dt><dd>{DAGIT_UPGRADE_AUTHORITY}</dd></div><div><dt>Network</dt><dd>Chain 1404 · BDAG</dd></div><div><dt>What you approve</dt><dd>Implementation, then initialized proxy</dd></div></dl>
-      <div className="admin-actions"><button className="secondary-action" onClick={connectAdminWallet}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button><button className="primary-action" onClick={deploy} disabled={!isAuthority || launching}>{launching ? 'Waiting for wallet…' : 'Deploy registry'}</button></div>
-      <p className="admin-status" role="status">{status}</p>
-      <p className="admin-note">DAGIT never receives your private key. The connected wallet signs every transaction and shows the BDAG fee before approval.</p>
-    </section>
-  </main>;
+  const [wallet, setWallet] = useState<Wallet | null>(null); const [status, setStatus] = useState('Connect the approved wallet to review the deployment.'); const [launching, setLaunching] = useState(false); const isAuthority = wallet?.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase();
+  async function connectAdminWallet() { setStatus('Opening your wallet…'); try { const connected = await connectWallet(); setWallet(connected); setStatus(connected.account.toLowerCase() === DAGIT_UPGRADE_AUTHORITY.toLowerCase() ? 'Approved upgrade-authority wallet connected.' : `This is not the configured upgrade-authority wallet (${DAGIT_UPGRADE_AUTHORITY}).`); } catch (error) { setStatus(error instanceof Error ? error.message : 'Wallet connection did not complete.'); } }
+  async function deploy() { setLaunching(true); setStatus('Your wallet will show the implementation transaction first, then the proxy transaction. Review both BDAG fees before approving.'); try { const result = await deployRegistry(); setStatus(`Deployment complete. Public proxy: ${result.registry}. Proxy transaction: ${result.transactionHash}. Implementation: ${result.implementation}.`); } catch (error) { setStatus(error instanceof Error ? error.message : 'Deployment did not complete.'); } finally { setLaunching(false); } }
+  return <main className="admin-shell"><nav className="admin-nav" aria-label="Administration"><a className="wordmark" href="/">DAGIT</a><span>Deployment administration</span></nav><section className="admin-card" aria-labelledby="admin-title"><div className="admin-mark"><Icon name="lock" size={26}/><span>Restricted by Cloudflare Access</span></div><h1 id="admin-title">Deploy the DAGIT registry</h1><p>This registry uses an OpenZeppelin UUPS proxy, keeping the public address stable while authorized upgrades remain possible.</p><dl><div><dt>Upgrade authority</dt><dd>{DAGIT_UPGRADE_AUTHORITY}</dd></div><div><dt>Network</dt><dd>Chain 1404 · BDAG</dd></div><div><dt>What you approve</dt><dd>Implementation, then initialized proxy</dd></div></dl><div className="admin-actions"><button className="button button-secondary" onClick={connectAdminWallet}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button><button className="button button-primary" onClick={deploy} disabled={!isAuthority || launching}>{launching ? 'Waiting for wallet…' : 'Deploy registry'}</button></div><p className="admin-status" role="status">{status}</p><p className="admin-note">DAGIT never receives your private key. Your connected wallet signs every transaction and shows the BDAG fee before approval.</p></section></main>;
 }
 
 function App() {
   if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) return <AdminConsole />;
-  const [file, setFile] = useState<File | null>(null);
-  const [hash, setHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [status, setStatus] = useState('Choose a file to begin. It stays on this device.');
-  const [walletStatus, setWalletStatus] = useState('');
-  const [verifyFile, setVerifyFile] = useState<File | null>(null);
-  const [verifyReceipt, setVerifyReceipt] = useState<Receipt | null>(null);
-  const [verifyStatus, setVerifyStatus] = useState('');
-  const [launchStatus, setLaunchStatus] = useState('');
-  const [launching, setLaunching] = useState(false);
-  const registry = configuredRegistry();
-  const manifest = useMemo(() => hash ? createUnsignedReceipt(hash) : null, [hash]);
-
-  async function hashSelectedFile() {
-    if (!file) return;
-    setReceipt(null); setHash(null); setProgress(0); setStatus('Creating a private fingerprint…');
-    try {
-      const task = hashFileLocally(file, ({ processed, total }) => setProgress(total ? processed / total : 0));
-      const result = await task.promise;
-      setHash(result); setStatus('Your fingerprint is ready. Your file was not uploaded.');
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'We could not create a fingerprint for that file.'); }
-    finally { setProgress(null); }
-  }
-
-  async function connect() {
-    setWalletStatus('Opening your wallet…');
-    try {
-      const connected = await connectWallet();
-      setWallet(connected); setWalletStatus('Wallet connected. You stay in control.');
-    } catch (error) { setWalletStatus(error instanceof Error ? error.message : 'Your wallet could not be connected.'); }
-  }
-
-  async function register() {
-    if (!hash || !manifest) return;
-    setStatus('Your wallet will show the BDAG network fee before you approve.');
-    try {
-      const result = await connectAndRegister(hash.digest, manifest.manifestDigest);
-      const complete: Receipt = { ...manifest, chain: { chainId: 1404, registry: result.registry, transactionHash: result.transactionHash, blockNumber: result.receipt.blockNumber.toString(), blockHash: result.receipt.blockHash, registrant: result.account, confirmations: 1 } };
-      setReceipt(complete); setStatus('Proof recorded. Save your receipt somewhere safe.');
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'Proof anchoring did not complete.'); }
-  }
-
-  async function verify() {
-    if (!verifyFile || !verifyReceipt) return;
-    setVerifyStatus('Checking the original file on this device…');
-    try {
-      const result = await hashFileLocally(verifyFile, () => {}).promise;
-      const local = verifyReceiptAgainstDigest(verifyReceipt, result.digest, result.byteLength);
-      if (!local.ok) { setVerifyStatus(`No match: ${local.reason}`); return; }
-      if (!verifyReceipt.chain) { setVerifyStatus('The file and receipt match. This receipt has not been anchored on-chain.'); return; }
-      setVerifyStatus('Checking Chain 1404…');
-      const onChain = await readProofByQuorum(verifyReceipt.chain.registry as `0x${string}`, result.digest);
-      if (!onChain.ok) { setVerifyStatus(`The file and receipt match, but Chain 1404 is unavailable: ${onChain.reason}`); return; }
-      if (!onChain.value || onChain.value.manifestDigest !== verifyReceipt.manifestDigest) { setVerifyStatus('No matching on-chain proof was found.'); return; }
-      setVerifyStatus('Verified. This exact file matches the saved on-chain proof.');
-    } catch (error) { setVerifyStatus(error instanceof Error ? error.message : 'Verification did not complete.'); }
-  }
-
-  async function launchRegistry() {
-    setLaunching(true);
-    setLaunchStatus('Your wallet will show the one-time Chain 1404 deployment fee before you approve.');
-    try {
-      const result = await deployRegistry();
-      setLaunchStatus(`Upgradeable registry proxy deployed: ${result.registry}. Proxy transaction: ${result.transactionHash}. Implementation: ${result.implementation}. Send the proxy address to DAGIT configuration before telling users proof anchoring is available.`);
-    } catch (error) { setLaunchStatus(error instanceof Error ? error.message : 'Registry deployment did not complete.'); }
-    finally { setLaunching(false); }
-  }
-
-  return <main>
-    <nav aria-label="Main navigation">
-      <a className="brand" href="#top">DAGIT</a>
-      <div className="nav-links"><a href="#how-it-works">How it works</a><a href="#verify">Verify a file</a></div>
-      <button className="wallet-button" onClick={connect}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button>
-    </nav>
-
-    <header id="top">
-      <div className="hero-copy"><p className="overline">CHAIN 1404 · BDAG</p><h1>Proof for the files<br/><em>that matter.</em></h1><p>Create a private fingerprint of any file. When proof anchoring is live, approve the Chain 1404 transaction in your own wallet.</p><a className="text-link" href="#create-proof">Create a proof <span>↓</span></a></div>
-      <aside className="trust-card"><span className="lock-mark" aria-hidden="true">⌁</span><h2>Private by default</h2><p>Your file stays on your device. DAGIT never asks for your seed phrase or takes custody of your BDAG.</p><ul><li>No account</li><li>No file upload</li><li>No DAGIT payment</li></ul></aside>
-    </header>
-
-    <section className="steps" id="how-it-works" aria-label="How DAGIT works"><div><span>1</span><h2>Choose a file</h2><p>We create its fingerprint on your device.</p></div><div><span>2</span><h2>Connect your wallet</h2><p>You approve every action yourself.</p></div><div><span>3</span><h2>Save your receipt</h2><p>Use it later to check the exact file.</p></div></section>
-
-    <section className="proof-workspace" id="create-proof" aria-labelledby="create-title">
-      <div className="workspace-title"><p className="overline">CREATE A PROOF</p><h2 id="create-title">Start with your file</h2><p>Choose a file, create its private fingerprint, then connect your self-custody wallet.</p></div>
-      <div className="proof-grid">
-        <div className="file-panel">
-          <label className={`dropzone ${file ? 'selected' : ''}`}><input type="file" onChange={(event) => { const next = event.target.files?.[0] ?? null; setFile(next); setHash(null); setReceipt(null); setStatus(next ? `${formatBytes(next.size)} selected. It remains on this device.` : 'Choose a file to begin. It stays on this device.'); }}/><span className="file-symbol" aria-hidden="true">+</span><strong>{file ? 'File ready on this device' : 'Choose a file'}</strong><small>{file ? `${formatBytes(file.size)} · not uploaded` : 'Document, photo, plan, video — any file type'}</small></label>
-          {file && <button className="primary-action" onClick={hashSelectedFile} disabled={progress !== null}>{progress === null ? 'Create private fingerprint' : `Creating fingerprint · ${Math.round(progress * 100)}%`}</button>}
-          <p className="live-status" role="status">{status}</p>
-        </div>
-        <div className="wallet-panel">
-          <p className="panel-label">YOUR WALLET</p><h3>{wallet ? 'Wallet connected' : 'Connect when you are ready'}</h3><p>{wallet ? `Using ${shortAddress(wallet.account)} on Chain 1404.` : 'Use a compatible self-custody wallet. You keep your private keys and approve every transaction.'}</p>
-          <button className="secondary-action" onClick={connect}>{wallet ? 'Wallet connected' : 'Connect wallet'}</button>
-          {walletStatus && <p className="wallet-status" role="status">{walletStatus}</p>}
-          <div className="fee-note"><span>What you pay</span><strong>BDAG network fee</strong><p>DAGIT takes no payment. Your wallet shows the final network fee before you approve.</p></div>
-        </div>
-      </div>
-      {hash && manifest && <div className="ready-proof"><div><span className="check" aria-hidden="true">✓</span><div><h3>Fingerprint ready</h3><p>This fingerprint matches only this exact file.</p></div></div><code>{hash.digest}</code><div className="anchor-action">{registry ? <button className="primary-action" onClick={register}>Review in wallet</button> : <div><strong>On-chain proof is not live in this demo.</strong><p>When live, your wallet will show the BDAG network fee before you approve.</p></div>}</div></div>}
-      {receipt && <div className="receipt-actions"><button onClick={() => downloadReceipt(receipt)}>Download receipt</button><button onClick={async () => { const qr = await QRCode.toDataURL(JSON.stringify(receipt)); const image = window.open(); if (image) image.document.write('<img alt="DAGIT proof receipt QR" src="' + qr + '">'); }}>Create QR</button></div>}
-    </section>
-
-    <section className="verify-section" id="verify" aria-labelledby="verify-title"><div><p className="overline">VERIFY A FILE</p><h2 id="verify-title">Check the original,<br/>any time.</h2><p>Choose the original file and its DAGIT receipt. A changed file will not match.</p></div><div className="verify-form"><label>Proof receipt<input type="file" accept="application/json" onChange={async (event) => { const candidate = event.target.files?.[0]; if (!candidate) return; try { setVerifyReceipt(JSON.parse(await candidate.text()) as Receipt); setVerifyStatus('Receipt ready. Now choose the original file.'); } catch { setVerifyStatus('Choose a valid DAGIT receipt file.'); } }}/></label><label>Original file<input type="file" onChange={(event) => setVerifyFile(event.target.files?.[0] ?? null)}/></label><button className="light-action" onClick={verify} disabled={!verifyFile || !verifyReceipt}>Verify file</button>{verifyStatus && <p className="verify-status" role="status">{verifyStatus}</p>}</div></section>
-
-    <footer><a className="brand" href="#top">DAGIT</a><p>Your file. Your wallet. Your proof.</p><span>Proof records a file fingerprint. It does not establish ownership or authorship.</span></footer>
-    {new URLSearchParams(window.location.search).get('launch') === '1' && <section className="launch-panel" aria-label="DAGIT registry launch"><p className="overline">REGISTRY LAUNCH</p><h2>Deploy the upgradeable DAGIT registry</h2><p>This deploys an OpenZeppelin UUPS implementation and an initialized ERC-1967 proxy. Only the configured upgrade authority can sign or authorize upgrades: {DAGIT_UPGRADE_AUTHORITY}.</p><button className="primary-action" onClick={launchRegistry} disabled={launching}>{launching ? 'Waiting for wallet…' : 'Deploy from my wallet'}</button>{launchStatus && <p className="live-status" role="status">{launchStatus}</p>}</section>}
-  </main>;
+  const [file, setFile] = useState<File | null>(null); const [hash, setHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null); const [progress, setProgress] = useState<number | null>(null); const [receipt, setReceipt] = useState<Receipt | null>(null); const [wallet, setWallet] = useState<Wallet | null>(null); const [status, setStatus] = useState('Choose a file to begin. It stays on this device.'); const [walletStatus, setWalletStatus] = useState(''); const [verifyFile, setVerifyFile] = useState<File | null>(null); const [verifyReceipt, setVerifyReceipt] = useState<Receipt | null>(null); const [verifyStatus, setVerifyStatus] = useState(''); const registry = configuredRegistry(); const manifest = useMemo(() => hash ? createUnsignedReceipt(hash) : null, [hash]);
+  async function hashSelectedFile() { if (!file) return; setReceipt(null); setHash(null); setProgress(0); setStatus('Creating your private fingerprint…'); try { const task = hashFileLocally(file, ({ processed, total }) => setProgress(total ? processed / total : 0)); const result = await task.promise; setHash(result); setStatus('Fingerprint ready. Your file was not uploaded.'); } catch (error) { setStatus(error instanceof Error ? error.message : 'We could not create a fingerprint for that file.'); } finally { setProgress(null); } }
+  async function connect() { setWalletStatus('Opening your wallet…'); try { const connected = await connectWallet(); setWallet(connected); setWalletStatus('Wallet connected. You stay in control.'); } catch (error) { setWalletStatus(error instanceof Error ? error.message : 'Your wallet could not be connected.'); } }
+  async function register() { if (!hash || !manifest) return; setStatus('Your wallet will show the BDAG network fee before you approve.'); try { const result = await connectAndRegister(hash.digest, manifest.manifestDigest); const complete: Receipt = { ...manifest, chain: { chainId: 1404, registry: result.registry, transactionHash: result.transactionHash, blockNumber: result.receipt.blockNumber.toString(), blockHash: result.receipt.blockHash, registrant: result.account, confirmations: 1 } }; setReceipt(complete); setStatus('Proof recorded. Save your receipt somewhere safe.'); } catch (error) { setStatus(error instanceof Error ? error.message : 'Proof anchoring did not complete.'); } }
+  async function verify() { if (!verifyFile || !verifyReceipt) return; setVerifyStatus('Checking the original file on this device…'); try { const result = await hashFileLocally(verifyFile, () => {}).promise; const local = verifyReceiptAgainstDigest(verifyReceipt, result.digest, result.byteLength); if (!local.ok) { setVerifyStatus(`No match: ${local.reason}`); return; } if (!verifyReceipt.chain) { setVerifyStatus('The file and receipt match. This receipt has not been anchored on-chain.'); return; } setVerifyStatus('Checking Chain 1404…'); const onChain = await readProofByQuorum(verifyReceipt.chain.registry as `0x${string}`, result.digest); if (!onChain.ok) { setVerifyStatus(`The file and receipt match, but Chain 1404 is unavailable: ${onChain.reason}`); return; } if (!onChain.value || onChain.value.manifestDigest !== verifyReceipt.manifestDigest) { setVerifyStatus('No matching on-chain proof was found.'); return; } setVerifyStatus('Verified. This exact file matches the saved on-chain proof.'); } catch (error) { setVerifyStatus(error instanceof Error ? error.message : 'Verification did not complete.'); } }
+  return <main className="site-shell"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="#top">DAGIT</a><div className="nav-links"><a href="#how-it-works">How it works</a><a href="#registry">Registry</a><a href="#verify">Verify</a></div><button className="button button-primary nav-wallet" onClick={connect}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button></nav><header className="hero" id="top"><div className="hero-copy"><h1>Prove the exact file.<br/><span>Keep the file private.</span></h1><p>Create a private fingerprint on your own device. Approve the proof in your wallet. Check the original file whenever you need to.</p><div className="hero-actions"><a className="button button-primary" href="#create-proof">Create a proof <Icon name="arrow" size={18}/></a><a className="button button-secondary" href="#verify">Verify a proof</a></div></div><aside className="integrity-card" aria-label="DAGIT proof integrity"><div className="integrity-card-head"><span className="integrity-emblem"><Icon name="shield" size={27}/></span><span>Proof integrity</span><i className="status-dot" aria-label="Live registry configured"/></div><div className="proof-visual" aria-hidden="true"><div className="proof-node"><Icon name="file" size={29}/></div><span/><div className="proof-node"><Icon name="lock" size={27}/></div><span/><div className="proof-node"><Icon name="chain" size={29}/></div><span/><div className="proof-node"><Icon name="receipt" size={28}/></div></div><ul className="integrity-list"><li><Icon name="check" size={17}/><span>Fingerprint created on your device</span></li><li><Icon name="check" size={17}/><span>Your wallet approves the transaction</span></li><li><Icon name="check" size={17}/><span>Receipt can be checked independently</span></li></ul><div className="registry-mini"><span>Chain 1404</span><strong>{registry ? `Registry ${shortAddress(registry)}` : 'Registry status loading'}</strong></div></aside></header><section className="trust-rail" aria-label="DAGIT trust commitments"><div><Icon name="file"/><strong>Your file stays local</strong><span>No file upload</span></div><div><Icon name="wallet"/><strong>You stay in control</strong><span>Self-custody wallet</span></div><div><Icon name="chain"/><strong>Proof is on-chain</strong><span>Chain 1404 · BDAG</span></div><div><Icon name="receipt"/><strong>Receipt travels with you</strong><span>Verify without an account</span></div></section><section className="capabilities" id="how-it-works" aria-labelledby="capability-title"><div className="section-intro"><p className="section-label">ONE CLEAR PROOF PATH</p><h2 id="capability-title">Private by design.<br/>Useful by default.</h2><p>DAGIT records only the fingerprint and proof data required to check an exact file. It does not host your file, hold your keys, or charge a separate DAGIT fee.</p></div><div className="capability-list"><article><span className="capability-icon"><Icon name="file"/></span><div><h3>Create a fingerprint</h3><p>Select any file. Its exact-byte fingerprint is created in your browser.</p></div></article><article><span className="capability-icon"><Icon name="wallet"/></span><div><h3>Approve it yourself</h3><p>Your compatible wallet displays the BDAG network fee before you decide.</p></div></article><article><span className="capability-icon"><Icon name="chain"/></span><div><h3>Anchor the proof</h3><p>The fingerprint is recorded through the live Chain 1404 registry.</p></div></article><article><span className="capability-icon"><Icon name="shield"/></span><div><h3>Check it later</h3><p>The original file and receipt can be checked together at any time.</p></div></article></div></section><section className="proof-workspace" id="create-proof" aria-labelledby="create-title"><div className="workspace-head"><div><p className="section-label">CREATE A PROOF</p><h2 id="create-title">Start with the file.</h2></div><p>Everything begins on your device. Choose a file, create its fingerprint, then decide whether to approve the BDAG network transaction.</p></div><div className="proof-grid"><div className="file-panel"><div className="panel-top"><span className="panel-step">01</span><span>Your file</span></div><label className={`dropzone ${file ? 'selected' : ''}`}><input type="file" onChange={(event) => { const next = event.target.files?.[0] ?? null; setFile(next); setHash(null); setReceipt(null); setStatus(next ? `${formatBytes(next.size)} selected. It remains on this device.` : 'Choose a file to begin. It stays on this device.'); }}/><span className="drop-icon"><Icon name="file" size={34}/></span><strong>{file ? 'File ready on this device' : 'Choose a file'}</strong><small>{file ? `${formatBytes(file.size)} · not uploaded` : 'Document, photo, plan, video — any file type'}</small></label>{file && <button className="button button-primary" onClick={hashSelectedFile} disabled={progress !== null}>{progress === null ? 'Create private fingerprint' : `Creating fingerprint · ${Math.round(progress * 100)}%`}</button>}<p className="live-status" role="status">{status}</p></div><div className="wallet-panel"><div className="panel-top"><span className="panel-step">02</span><span>Your wallet</span></div><div className="wallet-panel-main"><span className="wallet-icon"><Icon name="wallet" size={31}/></span><h3>{wallet ? 'Wallet connected' : 'Connect when ready'}</h3><p>{wallet ? `Using ${shortAddress(wallet.account)} on Chain 1404.` : 'Use a compatible self-custody wallet. You keep your private keys and approve every transaction.'}</p><button className="button button-light" onClick={connect}>{wallet ? shortAddress(wallet.account) : 'Connect wallet'}</button>{walletStatus && <p className="wallet-status" role="status">{walletStatus}</p>}</div><div className="fee-note"><span>What you pay</span><strong>BDAG network fee</strong><p>DAGIT takes no separate payment. Your wallet shows the final network fee before approval.</p></div></div></div>{hash && manifest && <div className="ready-proof"><div className="ready-title"><span><Icon name="check" size={20}/></span><div><h3>Fingerprint ready</h3><p>This fingerprint matches only this exact file.</p></div></div><code>{hash.digest}</code><div className="anchor-action"><span>03 · On-chain proof</span>{registry ? <button className="button button-primary" onClick={register}>Review in wallet <Icon name="arrow" size={18}/></button> : <p>Registry configuration is not available yet.</p>}</div></div>}{receipt && <div className="receipt-actions"><div><Icon name="receipt"/><div><strong>Proof recorded</strong><p>Keep the receipt with the original file.</p></div></div><div><button className="button button-secondary" onClick={() => downloadReceipt(receipt)}>Download receipt</button><button className="button button-primary" onClick={async () => { const qr = await QRCode.toDataURL(JSON.stringify(receipt)); const image = window.open(); if (image) image.document.write('<img alt="DAGIT proof receipt QR" src="' + qr + '">'); }}>Create QR</button></div></div>}</section><section className="registry-section" id="registry" aria-labelledby="registry-title"><div><p className="section-label">LIVE REGISTRY</p><h2 id="registry-title">A public record.<br/>Not a public file.</h2><p>The registry holds proof data required to verify the exact file. Your original file never enters DAGIT.</p></div><div className="registry-card"><div className="registry-card-title"><span><Icon name="chain"/></span><div><strong>Chain 1404 registry</strong><small>BDAG network</small></div><i className="status-dot"/></div><dl><div><dt>Proof storage</dt><dd>Fingerprint and receipt data</dd></div><div><dt>Registry address</dt><dd>{registry ?? 'Loading configured registry'}</dd></div><div><dt>Control</dt><dd>Self-custody wallet approval</dd></div></dl><a href="#verify">Verify an original file <Icon name="arrow" size={18}/></a></div></section><section className="verify-section" id="verify" aria-labelledby="verify-title"><div className="verify-intro"><p className="section-label">VERIFY A FILE</p><h2 id="verify-title">Check what matters.</h2><p>Provide the original file and its DAGIT receipt. We check the file on your device, then confirm the matching on-chain proof.</p><div className="verify-promise"><Icon name="shield"/><span>No account. No file upload. No custody.</span></div></div><div className="verify-form"><label>Proof receipt<span>Choose the saved DAGIT receipt file.</span><input type="file" accept="application/json" onChange={async (event) => { const candidate = event.target.files?.[0]; if (!candidate) return; try { setVerifyReceipt(JSON.parse(await candidate.text()) as Receipt); setVerifyStatus('Receipt ready. Now choose the original file.'); } catch { setVerifyStatus('Choose a valid DAGIT receipt file.'); } }}/></label><label>Original file<span>Choose the file that created the proof.</span><input type="file" onChange={(event) => setVerifyFile(event.target.files?.[0] ?? null)}/></label><button className="button button-primary" onClick={verify} disabled={!verifyFile || !verifyReceipt}>Verify proof <Icon name="arrow" size={18}/></button>{verifyStatus && <p className="verify-status" role="status">{verifyStatus}</p>}</div></section><footer><a className="wordmark" href="#top">DAGIT</a><p>Your file. Your wallet. Your proof.</p><span>Proof records a file fingerprint. It does not establish ownership, authorship, or legal validity.</span></footer></main>;
 }
-
 createRoot(document.getElementById('root')!).render(<App />);

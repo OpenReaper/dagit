@@ -28,7 +28,7 @@ The consumer journey is: choose a local file, create a local fingerprint, connec
 - No file, filename, file metadata, private key, or seed phrase enters a DAGIT service.
 - The consumer must use a compatible self-custody wallet and hold sufficient BDAG for the network fee.
 - DAGIT takes no separate product fee in the planned direct-proof flow; the final network fee is shown by the wallet before approval.
-- The current build has no approved production registry address and must not send a mainnet transaction.
+- The live production registry proxy is `0xe878c8daae03cab17026d298e907547718893e31` on Chain 1404. A user must still approve every proof transaction in their own wallet.
 - A proof records a digest anchoring event only; it does not establish authorship, ownership, legal execution, or truth.
 
 ## Brand Commitments
