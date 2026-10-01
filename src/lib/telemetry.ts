@@ -20,13 +20,16 @@ export type DagitEvent =
 
 declare global {
   interface Window {
-    dataLayer?: Array<Record<string, unknown>>;
+    dataLayer?: Array<unknown>;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
 const consentKey = "dagit.analytics.consent";
 const gtmContainerId = import.meta.env.VITE_GTM_CONTAINER_ID?.trim();
+const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim();
 let scriptRequested = false;
+let gaScriptRequested = false;
 
 export function analyticsConsent(): "granted" | "denied" | null {
   const value = window.localStorage.getItem(consentKey);
@@ -44,13 +47,36 @@ function loadGtm() {
   document.head.appendChild(script);
 }
 
+function loadGoogleAnalytics() {
+  if (!gaMeasurementId || gaScriptRequested) return;
+  gaScriptRequested = true;
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = (...args: unknown[]) => {
+    window.dataLayer?.push(args);
+  };
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaMeasurementId)}`;
+  document.head.appendChild(script);
+  window.gtag("js", new Date());
+  // GTM owns the public-page pageview. Direct gtag calls below carry only the
+  // allowlisted product events so page views are not duplicated.
+  window.gtag("config", gaMeasurementId, { send_page_view: false });
+}
+
 export function setAnalyticsConsent(value: "granted" | "denied") {
   window.localStorage.setItem(consentKey, value);
-  if (value === "granted") loadGtm();
+  if (value === "granted") {
+    loadGtm();
+    loadGoogleAnalytics();
+  }
 }
 
 export function initializeTelemetry() {
-  if (analyticsConsent() === "granted") loadGtm();
+  if (analyticsConsent() === "granted") {
+    loadGtm();
+    loadGoogleAnalytics();
+  }
 }
 
 /**
@@ -59,7 +85,8 @@ export function initializeTelemetry() {
  * document/signing metadata here.
  */
 export function track(event: DagitEvent) {
-  if (analyticsConsent() !== "granted" || !gtmContainerId) return;
+  if (analyticsConsent() !== "granted") return;
   window.dataLayer = window.dataLayer ?? [];
   window.dataLayer.push({ event });
+  if (gaMeasurementId) window.gtag?.("event", event);
 }

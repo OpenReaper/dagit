@@ -34,9 +34,9 @@ GTM's own platform processing remains subject to the approved privacy notice and
 ## GTM configuration
 
 1. Create a dedicated **DAGIT** web container and GA4 web data stream. Do not reuse the `macula.co.za` container or property.
-2. Set `VITE_GTM_CONTAINER_ID` in the Vercel production environment to that container ID and redeploy.
-3. Add a GA4 Configuration / Google tag that fires on the custom events above, with no event parameters.
-4. Configure default consent as denied and require `analytics_storage` for the GA4 tag.
+2. Set `VITE_GTM_CONTAINER_ID` and `VITE_GA_MEASUREMENT_ID` in the Vercel production environment, then redeploy. Both values are public identifiers, never credentials.
+3. The GTM Google tag owns consented public-page views. The application sends the listed allowlisted product-event names directly to the same GA4 stream, with no event parameters, so the metrics remain reliable without creating a separate GTM tag per event.
+4. GTM is only loaded after application-level consent; do not add any non-consented tag through Vercel, Cloudflare or an external script manager.
 5. Test each event through GTM Preview and GA4 DebugView after consenting. Test a declined session separately and confirm no GTM request is made.
 6. Review the data after 24 hours, then record the GTM version and GA4 stream identifier in the private operations register (not in public source).
 
