@@ -39,7 +39,7 @@ Name: DAGIT. Voice: plain, calm, privacy-first, and direct. The user explicitly 
 
 - `/Users/dreamreaper/Documents/BDAG/dagit/src/hash-worker.ts` — browser-local hashing implementation.
 - `/Users/dreamreaper/Documents/BDAG/dagit/src/lib/wallet.ts` — injected self-custody wallet integration.
-- `/Users/dreamreaper/Documents/BDAG/dagit/docs/RELEASE-GATES.md` — confirms production anchoring is not yet authorised.
+- `/Users/dreamreaper/Documents/BDAG/dagit/docs/RELEASE-GATES.md` — records the verified deployment boundary and remaining firm-onboarding gates.
 
 ## Product Principles
 

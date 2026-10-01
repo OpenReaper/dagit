@@ -8,6 +8,18 @@ It hashes the exact file bytes in the browser, asks the user's wallet to write o
 
 A proof shows that a wallet registered a supplied digest in an identifiable Chain 1404 transaction and confirmed block. It does **not** prove who authored a file, owns its rights, signed a legal agreement, or whether the contents are true. It is not an electronic-signature service or legal advice.
 
+## Documentation and policy pack
+
+The following documents are maintained with the product. The three policy documents are **drafts for legal and privacy review**: they must be approved, assigned an effective date, and published at stable URLs before a firm relies on DAGIT in a live client workflow.
+
+- [User guide](docs/USER_GUIDE.md) — the practical firm and recipient workflow.
+- [Terms of use — draft](docs/TERMS_OF_USE_DRAFT.md) — service boundary, acceptable use, and liability positions to be completed by counsel.
+- [Privacy notice — draft](docs/PRIVACY_NOTICE_DRAFT.md) — what DAGIT processes, what it does not receive, and the limits of an immutable blockchain record.
+- [Firm data handling and retention standard](docs/FIRM_DATA_HANDLING_AND_RETENTION_STANDARD.md) — operating controls for the firm workspace.
+- [Security and incident response standard](docs/SECURITY_AND_INCIDENT_RESPONSE.md) — access, incident, and recovery procedure.
+
+No document in this repository is legal advice or a substitute for the firm's own client terms, retention policy, signing-provider terms, or professional obligations.
+
 ## Local development
 
 ```sh
@@ -24,7 +36,7 @@ pnpm dev --host 127.0.0.1 --port 4173
 - `src/hash-worker.ts` — streams the original local `File` through SHA-256 in a Web Worker.
 - `src/lib/proof-core.mjs` — canonical receipt-manifest binding and local receipt verification.
 - `src/lib/chain.ts` — canonical Chain 1404 read quorum. It excludes bdagscan and blockdag.works.
-- `src/lib/wallet.ts` — injected-wallet registration and a self-custody launch action. Regular proof registration remains unavailable until an approved deployed registry address is supplied through `VITE_DAGIT_REGISTRY_ADDRESS`.
+- `src/lib/wallet.ts` — injected-wallet connection and self-custody proof registration. The production build is configured with the live registry address; local development uses `VITE_DAGIT_REGISTRY_ADDRESS`.
 
 ## Read quorum
 
@@ -34,6 +46,8 @@ Wallet configuration uses `https://rpc.blockdag.engineering/`. Verification uses
 
 `pnpm release:preflight` runs local build, receipt tests, contract tests, local transaction demo, and a live read-only RPC quorum check. It never deploys a contract or sends a mainnet transaction. See [docs/RELEASE-GATES.md](docs/RELEASE-GATES.md).
 
-## Launching the registry
+## Production registry
 
-Open `https://dagit.macula.co.za/?launch=1` in a browser profile containing the configured, self-custody Chain 1404 upgrade-authority wallet. The wallet signs two transactions: the UUPS implementation and the initialized ERC-1967 proxy. The proxy address is the public registry address; only its configured owner can authorize future upgrades. After the transactions are mined, set the proxy address as `VITE_DAGIT_REGISTRY_ADDRESS` in the Vercel production environment, deploy the app again, then independently verify the proxy, implementation, owner, and first wallet registration before announcing proof anchoring as live.
+The production UUPS proxy is `0xe878c8daae03cab17026d298e907547718893e31` on Chain 1404. Proof registration is self-custodied: every anchor requires the user to connect a compatible wallet and approve the BDAG network fee.
+
+The configured upgrade authority is a separate, high-risk administrative control. Any upgrade must be independently reviewed, approved through the owner wallet, and verified on-chain before it is announced.
