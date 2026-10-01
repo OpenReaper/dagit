@@ -20,7 +20,7 @@ When a user anchors a proof, a fingerprint and related proof commitment are writ
 | File fingerprint, receipt/manifest commitment, transaction, block and wallet address | Produce and check the technical proof | Written to the public blockchain when the wallet owner approves an anchor; receipt may be retained by the user |
 | Firm staff email address and immutable identity-provider subject | Authenticate authorised workspace staff and apply workspace permissions | Yes, in the firm metadata service where that workspace feature is enabled |
 | Firm/matter alias, proof receipt metadata, action audit data and request identifiers | Operate the firm workspace, restrict access, create evidence records and investigate misuse | Yes, only to the minimum necessary extent |
-| Browser, device and network information | Deliver and protect the service, diagnose faults and prevent abuse | [complete after analytics, logging and hosting configuration review] |
+| Browser, device and network information | Deliver and protect the service, diagnose faults and prevent abuse | Hosting and security providers may process this information; optional public-site analytics are loaded only after a visitor chooses to allow them. DAGIT application events exclude file and client data. |
 
 ## Why we process it
 
@@ -43,6 +43,12 @@ Users must not place personal data, client names, passwords, confidential text, 
 ## Firm workspaces
 
 The firm workspace is a metadata service, not a document repository or e-signature provider. It is intended to hold only the minimum account, matter-alias, proof-receipt, and audit information necessary for the workflow. The firm remains responsible for its own client relationship, case system, document retention, signing provider, and legal obligations.
+
+## Optional analytics
+
+On the public DAGIT pages, a visitor may choose to allow anonymous product-use analytics. The public interface does not load the analytics container until that choice is made. The events measure broad actions such as beginning a proof, completing a local fingerprint, recording a proof, creating a receipt, or matching a file during verification. DAGIT does not intentionally include selected-file data, filenames, hashes, receipts, wallet addresses, email addresses, matter aliases, signing references, or document metadata in those events.
+
+Analytics does not run in the protected firm workspace. Firm operational records and access logs are governed by the firm-workspace service arrangement rather than public-site marketing analytics.
 
 ## Retention and deletion
 

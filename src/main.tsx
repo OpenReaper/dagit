@@ -33,6 +33,12 @@ import {
   DAGIT_UPGRADE_AUTHORITY,
   deployRegistry,
 } from "./lib/wallet";
+import {
+  analyticsConsent,
+  initializeTelemetry,
+  setAnalyticsConsent,
+  track,
+} from "./lib/telemetry";
 import "./style.css";
 
 type Wallet = { account: string };
@@ -160,6 +166,7 @@ function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
 }
 
 function downloadReceipt(receipt: Receipt) {
+  track("receipt_downloaded");
   const blob = new Blob([JSON.stringify(receipt, null, 2)], {
     type: "application/json",
   });
@@ -308,6 +315,7 @@ function ReceiptActions({
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(proofUrl(receipt));
+      track("proof_link_copied");
       setShareStatus(
         "Private proof link copied. The receipt is in the URL fragment, not on a DAGIT server.",
       );
@@ -327,6 +335,7 @@ function ReceiptActions({
         }),
       );
       setShareStatus("Scan this QR with the original file ready to verify.");
+      track("proof_qr_created");
     } catch {
       setShareStatus("The QR code could not be created.");
     }
@@ -378,7 +387,7 @@ function ReceiptActions({
         </button>
       </div>
       <div className="proof-pack-actions subtle">
-        <button className="text-button" onClick={() => window.print()}>
+        <button className="text-button" onClick={() => { track("certificate_printed"); window.print(); }}>
           <Icon name="print" size={16} />
           Print certificate
         </button>
@@ -457,14 +466,17 @@ function CreateProof({
     setHash(null);
     setProgress(0);
     setStatus("Creating your private fingerprint…");
+    track("file_hash_started");
     try {
       const task = hashFileLocally(file, ({ processed, total }) =>
         setProgress(total ? processed / total : 0),
       );
       const result = await task.promise;
       setHash(result);
+      track("file_hash_completed");
       setStatus("Fingerprint ready. Your file was not uploaded.");
     } catch (error) {
+      track("file_hash_failed");
       setStatus(
         error instanceof Error
           ? error.message
@@ -494,6 +506,7 @@ function CreateProof({
   async function register() {
     if (!hash || !manifest) return;
     setStatus("Your wallet will show the network fee before you approve.");
+    track("proof_anchor_requested");
     try {
       const result = await connectAndRegister(
         hash.digest,
@@ -514,7 +527,9 @@ function CreateProof({
       setStatus(
         "Proof recorded. Build the proof pack and give the other person the receipt or QR.",
       );
+      track("proof_recorded");
     } catch (error) {
+      track("proof_anchor_failed");
       setStatus(
         error instanceof Error
           ? error.message
@@ -549,6 +564,7 @@ function CreateProof({
               onChange={(event) => {
                 const next = event.target.files?.[0] ?? null;
                 setFile(next);
+                if (next) track("proof_started");
                 setHash(null);
                 setReceipt(null);
                 setStatus(
@@ -846,6 +862,7 @@ function VerifyProof() {
   }, []);
   async function verify() {
     if (!file || !receipt) return;
+    track("verification_started");
     setVerification({
       tone: "working",
       text: "Checking the original file on this device…",
@@ -858,18 +875,22 @@ function VerifyProof() {
         result.digest,
         result.byteLength,
       );
-      if (!local.ok)
+      if (!local.ok) {
+        track("verification_mismatched");
         return setVerification({
           tone: "fail",
           text: `This file does not match the recorded version. Do not sign this version. ${local.reason}`,
           onChain: false,
         });
-      if (!receipt.chain)
+      }
+      if (!receipt.chain) {
+        track("verification_matched");
         return setVerification({
           tone: "pass",
           text: "The file and receipt match. This receipt has not been anchored on-chain.",
           onChain: false,
         });
+      }
       setVerification({
         tone: "working",
         text: "Checking Chain 1404 through the verification quorum…",
@@ -879,12 +900,14 @@ function VerifyProof() {
         receipt.chain.registry as `0x${string}`,
         result.digest,
       );
-      if (!onChain.ok)
+      if (!onChain.ok) {
+        track("verification_chain_unavailable");
         return setVerification({
           tone: "fail",
           text: `The file and receipt match, but Chain 1404 could not be confirmed: ${onChain.reason}`,
           onChain: false,
         });
+      }
       if (
         !onChain.value ||
         onChain.value.manifestDigest.toLowerCase() !==
@@ -913,7 +936,9 @@ function VerifyProof() {
         text: `Verified. This exact file matches the version recorded by the firm.${nextStep}`,
         onChain: true,
       });
+      track("verification_matched");
     } catch (error) {
+      track("verification_chain_unavailable");
       setVerification({
         tone: "fail",
         text:
@@ -1116,11 +1141,14 @@ function Home() {
   const [walletStatus, setWalletStatus] = useState("");
   async function connect() {
     setWalletStatus("Opening your wallet…");
+    track("wallet_connect_requested");
     try {
       const connected = await connectWallet();
       setWallet(connected);
       setWalletStatus("Wallet connected. You stay in control.");
+      track("wallet_connected");
     } catch (error) {
+      track("wallet_connect_failed");
       setWalletStatus(
         error instanceof Error
           ? error.message
@@ -1348,7 +1376,25 @@ function Home() {
   );
 }
 
+function AnalyticsConsent() {
+  const [choice, setChoice] = useState<"granted" | "denied" | null>(() => analyticsConsent());
+  if (choice) return null;
+  return (
+    <aside className="analytics-consent" aria-label="Analytics preference">
+      <div>
+        <strong>Help us improve DAGIT</strong>
+        <p>Allow anonymous product-use analytics. We never send file data, filenames, hashes, receipts, wallet addresses, matter references or email addresses.</p>
+      </div>
+      <div className="analytics-consent-actions">
+        <button className="text-button" onClick={() => { setAnalyticsConsent("denied"); setChoice("denied"); }}>No thanks</button>
+        <button className="button button-primary" onClick={() => { setAnalyticsConsent("granted"); setChoice("granted"); }}>Allow analytics</button>
+      </div>
+    </aside>
+  );
+}
+
 function App() {
+  useEffect(() => initializeTelemetry(), []);
   if (window.location.pathname === "/firm" || window.location.pathname.startsWith("/firm/")) return <FirmMatterWorkspace />;
   if (window.location.pathname === "/admin/matter") return <FirmMatterWorkspace />;
   if (
@@ -1359,8 +1405,7 @@ function App() {
   if (
     window.location.pathname === "/verify" ||
     window.location.pathname.startsWith("/verify/")
-  )
-    return <VerifyProof />;
-  return <Home />;
+  ) return <><VerifyProof /><AnalyticsConsent /></>;
+  return <><Home /><AnalyticsConsent /></>;
 }
 createRoot(document.getElementById("root")!).render(<App />);
