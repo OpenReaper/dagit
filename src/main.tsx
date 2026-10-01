@@ -1048,7 +1048,7 @@ function VerifyProof() {
                       : "Not yet anchored"}
                   </dd>
                 </div>
-                {"workflow" in receipt && receipt.workflow.signingProvider && (
+                {verification.onChain && "workflow" in receipt && receipt.workflow.signingProvider && (
                   <div>
                     <dt>Signing service</dt>
                     <dd>{receipt.workflow.signingProvider}{receipt.workflow.signingReference ? ` · ${receipt.workflow.signingReference}` : ""}</dd>
