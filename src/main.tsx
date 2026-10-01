@@ -1329,6 +1329,7 @@ function Home() {
 }
 
 function App() {
+  if (window.location.pathname === "/firm" || window.location.pathname.startsWith("/firm/")) return <FirmMatterWorkspace />;
   if (window.location.pathname === "/admin/matter") return <FirmMatterWorkspace />;
   if (
     window.location.pathname === "/admin" ||
