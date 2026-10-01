@@ -2,7 +2,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { keccak256, stringToHex, verifyTypedData } from 'viem';
 
-export const RECEIPT_SCHEMA = 'dagit-proof/v2';
+export const RECEIPT_SCHEMA = 'dagit-proof/v3';
+export const PREVIOUS_RECEIPT_SCHEMA = 'dagit-proof/v2';
 export const LEGACY_RECEIPT_SCHEMA = 'dagit-proof/v1';
 export const HASH_ALGORITHM = 'sha-256';
 export const RECORD_KINDS = ['original', 'revision', 'final', 'evidence'];
@@ -37,31 +38,52 @@ function normaliseRecord(record = {}) {
   return { kind, label, parent };
 }
 
+function normaliseWorkflow(workflow = {}) {
+  const normaliseField = (value, name) => {
+    if (value === undefined || value === null || value === '') return '';
+    const normalised = String(value).trim();
+    if (normalised.length > 120 || /[\r\n]/.test(normalised)) throw new Error(`${name} must be one line and 120 characters or fewer.`);
+    return normalised;
+  };
+  return {
+    documentRole: normaliseField(workflow.documentRole, 'Document role'),
+    signingProvider: normaliseField(workflow.signingProvider, 'Signing provider'),
+    signingReference: normaliseField(workflow.signingReference, 'Signing reference')
+  };
+}
+
 export function digestBytes(bytes) { return `0x${bytesToHex(sha256(bytes))}`; }
 
 /** The exact string whose keccak hash is committed by the registry. */
-export function canonicalManifest({ digest, byteLength, schema = RECEIPT_SCHEMA, record }) {
+export function canonicalManifest({ digest, byteLength, schema = RECEIPT_SCHEMA, record, workflow }) {
   const normalisedDigest = normaliseDigest(digest);
   if (!Number.isSafeInteger(byteLength) || byteLength < 0) throw new Error('byteLength must be a non-negative safe integer.');
   if (schema === LEGACY_RECEIPT_SCHEMA) return `${LEGACY_RECEIPT_SCHEMA}\n${HASH_ALGORITHM}\n${normalisedDigest}\n${byteLength}`;
+  if (schema === PREVIOUS_RECEIPT_SCHEMA) {
+    const normalisedRecord = normaliseRecord(record);
+    return [PREVIOUS_RECEIPT_SCHEMA, HASH_ALGORITHM, normalisedDigest, byteLength, normalisedRecord.kind, normalisedRecord.parent?.digest ?? '', normalisedRecord.parent?.manifestDigest ?? '', JSON.stringify(normalisedRecord.label)].join('\n');
+  }
   if (schema !== RECEIPT_SCHEMA) throw new Error('Unsupported receipt schema.');
   const normalisedRecord = normaliseRecord(record);
   // Deliberately excludes file name, type, EXIF, and contents.
-  return [RECEIPT_SCHEMA, HASH_ALGORITHM, normalisedDigest, byteLength, normalisedRecord.kind, normalisedRecord.parent?.digest ?? '', normalisedRecord.parent?.manifestDigest ?? '', JSON.stringify(normalisedRecord.label)].join('\n');
+  const normalisedWorkflow = normaliseWorkflow(workflow);
+  return [RECEIPT_SCHEMA, HASH_ALGORITHM, normalisedDigest, byteLength, normalisedRecord.kind, normalisedRecord.parent?.digest ?? '', normalisedRecord.parent?.manifestDigest ?? '', JSON.stringify(normalisedRecord.label), JSON.stringify(normalisedWorkflow)].join('\n');
 }
 
 export function manifestDigest(manifest) { return keccak256(stringToHex(canonicalManifest(manifest))); }
 
-export function createUnsignedReceipt({ digest, byteLength, record }) {
+export function createUnsignedReceipt({ digest, byteLength, record, workflow }) {
   const normalisedDigest = normaliseDigest(digest);
   const normalisedRecord = normaliseRecord(record);
-  return { schema: RECEIPT_SCHEMA, hashing: { algorithm: HASH_ALGORITHM, digest: normalisedDigest, byteLength }, record: normalisedRecord, manifestDigest: manifestDigest({ digest: normalisedDigest, byteLength, record: normalisedRecord }) };
+  const normalisedWorkflow = normaliseWorkflow(workflow);
+  return { schema: RECEIPT_SCHEMA, hashing: { algorithm: HASH_ALGORITHM, digest: normalisedDigest, byteLength }, record: normalisedRecord, workflow: normalisedWorkflow, manifestDigest: manifestDigest({ digest: normalisedDigest, byteLength, record: normalisedRecord, workflow: normalisedWorkflow }) };
 }
 
 function receiptManifest(receipt) {
   if (!receipt || typeof receipt !== 'object' || !receipt.hashing || typeof receipt.hashing !== 'object') throw new Error('Unsupported receipt schema.');
   if (receipt.schema === LEGACY_RECEIPT_SCHEMA) return { digest: receipt.hashing.digest, byteLength: receipt.hashing.byteLength, schema: LEGACY_RECEIPT_SCHEMA };
-  if (receipt.schema === RECEIPT_SCHEMA) return { digest: receipt.hashing.digest, byteLength: receipt.hashing.byteLength, schema: RECEIPT_SCHEMA, record: receipt.record };
+  if (receipt.schema === PREVIOUS_RECEIPT_SCHEMA) return { digest: receipt.hashing.digest, byteLength: receipt.hashing.byteLength, schema: PREVIOUS_RECEIPT_SCHEMA, record: receipt.record };
+  if (receipt.schema === RECEIPT_SCHEMA) return { digest: receipt.hashing.digest, byteLength: receipt.hashing.byteLength, schema: RECEIPT_SCHEMA, record: receipt.record, workflow: receipt.workflow };
   throw new Error('Unsupported receipt schema.');
 }
 

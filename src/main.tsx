@@ -11,6 +11,11 @@ import {
   verifyReceiptAgainstDigest,
   type Receipt,
 } from "./lib/proof-core";
+import {
+  createEvidencePack,
+  createMatterRecord,
+  matterRecordIsValid,
+} from "./lib/matter-core";
 import { readProofByQuorum } from "./lib/chain";
 import {
   acknowledgeReceipt,
@@ -154,6 +159,16 @@ function downloadReceipt(receipt: Receipt) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = "dagit-proof-pack.json";
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function downloadJson(value: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
   anchor.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 500);
 }
@@ -670,6 +685,105 @@ function CreateProof({
   );
 }
 
+function FirmMatterWorkspace() {
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [matterReference, setMatterReference] = useState("");
+  const [documentRole, setDocumentRole] = useState("Agreement for signature");
+  const [signingProvider, setSigningProvider] = useState("");
+  const [signingReference, setSigningReference] = useState("");
+  const [preFile, setPreFile] = useState<File | null>(null);
+  const [preHash, setPreHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
+  const [preReceipt, setPreReceipt] = useState<Receipt | null>(null);
+  const [matter, setMatter] = useState<ReturnType<typeof createMatterRecord> | null>(null);
+  const [finalFile, setFinalFile] = useState<File | null>(null);
+  const [finalHash, setFinalHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
+  const [certificate, setCertificate] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
+  const [finalReceipt, setFinalReceipt] = useState<Receipt | null>(null);
+  const [status, setStatus] = useState("Create the firm’s pre-sign proof first. Files are never uploaded.");
+  const [working, setWorking] = useState(false);
+
+  const workflow = { documentRole, signingProvider, signingReference };
+  const preManifest = useMemo(() => preHash ? createUnsignedReceipt({ ...preHash, record: { kind: "original", label: documentRole }, workflow }) : null, [preHash, documentRole, signingProvider, signingReference]);
+  const finalManifest = useMemo(() => matter && finalHash ? createUnsignedReceipt({ ...finalHash, record: { kind: "final", label: matter.documentRole, parent: { digest: matter.preSignProof.hashing.digest, manifestDigest: matter.preSignProof.manifestDigest } }, workflow: { documentRole: matter.documentRole, signingProvider: matter.signingProvider, signingReference: matter.signingReference } }) : null, [matter, finalHash]);
+
+  async function connect() {
+    try { const result = await connectWallet(); setWallet({ account: result.account }); }
+    catch (error) { setStatus(error instanceof Error ? error.message : "Wallet connection did not complete."); }
+  }
+  async function hashFile(file: File, setHash: (value: { digest: `0x${string}`; byteLength: number }) => void, message: string) {
+    setWorking(true); setStatus(message);
+    try { setHash(await hashFileLocally(file, () => {}).promise); setStatus("Private fingerprint ready. The file never left this browser."); }
+    catch (error) { setStatus(error instanceof Error ? error.message : "Fingerprinting did not complete."); }
+    finally { setWorking(false); }
+  }
+  async function anchor(manifest: Receipt, hash: { digest: `0x${string}`; byteLength: number }) {
+    const result = await connectAndRegister(hash.digest, manifest.manifestDigest);
+    return { ...manifest, chain: { chainId: 1404, registry: result.registry, transactionHash: result.transactionHash, blockNumber: result.receipt.blockNumber.toString(), blockHash: result.receipt.blockHash, registrant: result.account, confirmations: 1 } } as Receipt;
+  }
+  async function recordPreSign() {
+    if (!preHash || !preManifest || !matterReference.trim() || !documentRole.trim()) return;
+    setWorking(true); setStatus("Your wallet will show the BDAG network fee for the pre-sign proof.");
+    try {
+      const anchored = await anchor(preManifest, preHash);
+      const nextMatter = createMatterRecord({ matterReference, documentRole, signingProvider, signingReference, preSignProof: anchored });
+      setPreReceipt(anchored); setMatter(nextMatter); downloadJson(nextMatter, "dagit-firm-matter-record.json");
+      setStatus("Pre-sign proof recorded. The local firm matter record downloaded; keep it to link the final signed file.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Pre-sign proof was not recorded."); }
+    finally { setWorking(false); }
+  }
+  async function loadMatter(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]; if (!file) return;
+    try {
+      const candidate: unknown = JSON.parse(await file.text());
+      if (!matterRecordIsValid(candidate)) throw new Error("Choose a valid DAGIT firm matter record.");
+      const loaded = candidate as ReturnType<typeof createMatterRecord>;
+      setMatter(loaded); setMatterReference(loaded.matterReference); setDocumentRole(loaded.documentRole); setSigningProvider(loaded.signingProvider); setSigningReference(loaded.signingReference); setPreReceipt(loaded.preSignProof);
+      setStatus("Firm matter record loaded locally. Choose the completed file to record its final proof.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Matter record could not be loaded."); }
+  }
+  async function recordFinal() {
+    if (!matter || !finalHash || !finalManifest) return;
+    setWorking(true); setStatus("Your wallet will show the BDAG network fee for the final proof.");
+    try {
+      const anchored = await anchor(finalManifest, finalHash); setFinalReceipt(anchored);
+      const pack = createEvidencePack({ matter, finalProof: anchored, auditCertificate: certificate ?? undefined });
+      downloadJson(pack, "dagit-evidence-pack.json");
+      setStatus("Final proof recorded. The evidence pack downloaded with both linked proofs.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Final proof was not recorded."); }
+    finally { setWorking(false); }
+  }
+  return <main className="admin-page firm-page">
+    <nav className="site-nav"><a className="wordmark" href="/">DAGIT</a><a className="back-link" href="/">Public site <Icon name="arrow" size={16} /></a></nav>
+    <header className="admin-hero"><p className="eyebrow">Firm workspace</p><h1>Prepare, confirm, then retain the proof.</h1><p>This workspace is protected for the firm. It creates local proof records only; use your usual signing service separately.</p></header>
+    <section className="firm-workspace">
+      <div className="firm-card">
+        <div className="panel-top"><span className="panel-step">01</span><span>Pre-sign version</span></div>
+        <label>Matter reference <input value={matterReference} maxLength={160} onChange={(e) => setMatterReference(e.target.value)} placeholder="Private firm reference" /></label>
+        <label>Document role <input value={documentRole} maxLength={120} onChange={(e) => setDocumentRole(e.target.value)} /></label>
+        <label>Signing service <span>Optional. Displayed to the client only after their file matches.</span><input value={signingProvider} maxLength={120} onChange={(e) => setSigningProvider(e.target.value)} placeholder="e.g. your signing service" /></label>
+        <label>Signing reference <span>Optional. Never placed on-chain.</span><input value={signingReference} maxLength={120} onChange={(e) => setSigningReference(e.target.value)} /></label>
+        <label>Version sent for signing <span>The file stays on this device.</span><input type="file" onChange={(e) => { const selected = e.target.files?.[0] ?? null; setPreFile(selected); setPreHash(null); }} /></label>
+        {preFile && <button className="button button-secondary" disabled={working} onClick={() => void hashFile(preFile, setPreHash, "Creating the pre-sign fingerprint…")}>Create fingerprint</button>}
+        {preHash && <button className="button button-primary" disabled={working || !configuredRegistry()} onClick={() => void recordPreSign()}>Record pre-sign proof <Icon name="arrow" size={17} /></button>}
+        {preReceipt && <ReceiptActions receipt={preReceipt} onReceipt={setPreReceipt} />}
+      </div>
+      <div className="firm-card">
+        <div className="panel-top"><span className="panel-step">02</span><span>Final signed version</span></div>
+        <p className="firm-copy">After your signing service completes, record the signed file. DAGIT links it privately to the pre-sign proof and exports the evidence pack.</p>
+        <label>Firm matter record <span>Load the local record downloaded in step 1, including after a new browser session.</span><input type="file" accept="application/json" onChange={loadMatter} /></label>
+        {matter && <p className="field-status">Matter loaded: {matter.matterReference}</p>}
+        <label>Completed signed file <input type="file" disabled={!matter} onChange={(e) => { const selected = e.target.files?.[0] ?? null; setFinalFile(selected); setFinalHash(null); }} /></label>
+        {finalFile && <button className="button button-secondary" disabled={working} onClick={() => void hashFile(finalFile, setFinalHash, "Creating the final fingerprint…")}>Create fingerprint</button>}
+        <label>Signing audit certificate <span>Optional. DAGIT records only its fingerprint in the evidence pack.</span><input type="file" disabled={!matter} onChange={async (e) => { const selected = e.target.files?.[0]; if (selected) await hashFile(selected, setCertificate, "Fingerprinting audit certificate…"); }} /></label>
+        {finalHash && <button className="button button-primary" disabled={working || !configuredRegistry()} onClick={() => void recordFinal()}>Record final proof and export pack <Icon name="arrow" size={17} /></button>}
+        {finalReceipt && <ReceiptActions receipt={finalReceipt} onReceipt={setFinalReceipt} />}
+      </div>
+    </section>
+    <div className="wallet-strip"><Icon name="wallet" /><div><strong>{wallet ? `Firm wallet connected: ${shortAddress(wallet.account)}` : "Connect the firm wallet to anchor proofs"}</strong><p>Each proof is approved and paid as a normal BDAG network transaction in the firm’s wallet.</p></div><button className="button button-light" onClick={() => void connect()}>{wallet ? shortAddress(wallet.account) : "Connect wallet"}</button></div>
+    <p className="admin-status" role="status">{status}</p>
+  </main>;
+}
+
 function VerifyProof() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -718,7 +832,7 @@ function VerifyProof() {
       if (!local.ok)
         return setVerification({
           tone: "fail",
-          text: `No match: ${local.reason}`,
+          text: `This file does not match the recorded version. Do not sign this version. ${local.reason}`,
           onChain: false,
         });
       if (!receipt.chain)
@@ -761,13 +875,13 @@ function VerifyProof() {
           text: "The receipt registrant does not match the on-chain proof.",
           onChain: false,
         });
-      const acknowledgement = await verifyReceiptAcknowledgement(receipt);
-      const suffix = acknowledgement.ok
-        ? ` A wallet acknowledgement from ${shortAddress(acknowledgement.signer!)} is valid.`
-        : "";
+      const workflow = "workflow" in receipt ? receipt.workflow : null;
+      const nextStep = workflow?.signingProvider
+        ? ` Return to your existing ${workflow.signingProvider} signing invitation${workflow.signingReference ? ` (${workflow.signingReference})` : ""}.`
+        : " Contact the firm for the signing invitation.";
       setVerification({
         tone: "pass",
-        text: `Verified. This exact file matches the on-chain proof.${suffix}`,
+        text: `Verified. This exact file matches the version recorded by the firm.${nextStep}`,
         onChain: true,
       });
     } catch (error) {
@@ -823,7 +937,7 @@ function VerifyProof() {
       </nav>
       <header className="verify-hero">
         <div>
-          <h1>Do both files match?</h1>
+          <h1>Check the file before you sign.</h1>
           <p>
             DAGIT checks the exact file on your device, then checks the proof
             against Chain 1404. No account. No upload.
@@ -934,6 +1048,12 @@ function VerifyProof() {
                       : "Not yet anchored"}
                   </dd>
                 </div>
+                {"workflow" in receipt && receipt.workflow.signingProvider && (
+                  <div>
+                    <dt>Signing service</dt>
+                    <dd>{receipt.workflow.signingProvider}{receipt.workflow.signingReference ? ` · ${receipt.workflow.signingReference}` : ""}</dd>
+                  </div>
+                )}
               </dl>
             </>
           ) : (
@@ -1209,6 +1329,7 @@ function Home() {
 }
 
 function App() {
+  if (window.location.pathname === "/admin/matter") return <FirmMatterWorkspace />;
   if (
     window.location.pathname === "/admin" ||
     window.location.pathname.startsWith("/admin/")
