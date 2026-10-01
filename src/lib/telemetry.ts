@@ -61,7 +61,11 @@ function loadGoogleAnalytics() {
   window.gtag("js", new Date());
   // GTM owns the public-page pageview. Direct gtag calls below carry only the
   // allowlisted product events so page views are not duplicated.
-  window.gtag("config", gaMeasurementId, { send_page_view: false });
+  window.gtag("config", gaMeasurementId, {
+    send_page_view: false,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+  });
 }
 
 export function setAnalyticsConsent(value: "granted" | "denied") {
