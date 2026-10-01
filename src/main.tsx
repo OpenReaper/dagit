@@ -355,9 +355,6 @@ function ReceiptActions({
         </button>
       </div>
       <div className="proof-pack-actions subtle">
-        <button className="text-button" onClick={signOwnCopy}>
-          Sign this copy with wallet
-        </button>
         <button className="text-button" onClick={() => window.print()}>
           <Icon name="print" size={16} />
           Print certificate
@@ -510,11 +507,11 @@ function CreateProof({
     >
       <div className="workspace-head">
         <div>
-          <h2 id="create-title">Choose the version you want checked.</h2>
+          <h2 id="create-title">For the firm: record the document version.</h2>
         </div>
         <p>
-          Create the proof on your device. The other person receives a receipt
-          or QR, then verifies their own copy of the file.
+          The firm records the version it is sending for signature. The client
+          receives a receipt or QR, then checks their own copy of the file.
         </p>
       </div>
       <div className="proof-grid">
@@ -838,7 +835,7 @@ function VerifyProof() {
           <span>2</span>
           <p>Choose original file</p>
           <span>3</span>
-          <p>Verify or acknowledge</p>
+          <p>Check before signing</p>
         </div>
       </header>
       <section className="verify-workspace">
@@ -937,46 +934,7 @@ function VerifyProof() {
                       : "Not yet anchored"}
                   </dd>
                 </div>
-                <div>
-                  <dt>Wallet sign-off</dt>
-                  <dd>
-                    {"acknowledgement" in receipt && receipt.acknowledgement
-                      ? shortAddress(receipt.acknowledgement.signer)
-                      : "Not attached"}
-                  </dd>
-                </div>
               </dl>
-              {verification.onChain && (
-                <div className="acknowledge-box">
-                  <Icon name="users" />
-                  <div>
-                    <strong>Confirm this version</strong>
-                    <p>
-                      Sign a wallet acknowledgement for this exact receipt. It
-                      is not a legal signature or identity check.
-                    </p>
-                    <button
-                      className="button button-secondary"
-                      onClick={acknowledge}
-                    >
-                      Acknowledge with wallet
-                    </button>
-                  </div>
-                </div>
-              )}
-              {ackStatus && (
-                <p className="field-status" role="status">
-                  {ackStatus}
-                </p>
-              )}
-              {receipt.acknowledgement && (
-                <button
-                  className="button button-primary receipt-download"
-                  onClick={() => downloadReceipt(receipt)}
-                >
-                  Download updated receipt
-                </button>
-              )}
             </>
           ) : (
             <p>
@@ -1097,7 +1055,7 @@ function Home() {
             </li>
             <li>
               <Icon name="check" size={17} />
-              <span>Optional wallet acknowledgement travels with proof</span>
+          <span>Client checks their own copy before signing</span>
             </li>
           </ul>
           <div className="registry-mini">
@@ -1127,9 +1085,9 @@ function Home() {
           <span>Chain 1404 · BDAG</span>
         </div>
         <div>
-          <Icon name="wallet" />
-          <strong>Each person decides</strong>
-          <span>Self-custody wallet</span>
+          <Icon name="shield" />
+          <strong>Firm record</strong>
+          <span>Chain 1404 proof</span>
         </div>
       </section>
       <section
@@ -1142,7 +1100,7 @@ function Home() {
           <p>
             Create a record for a file. Send the receipt to the other person.
             They check their copy against it. If both files match, they can add
-            a wallet acknowledgement to that exact record.
+            a copy of the verification result to their matter file.
           </p>
         </div>
         <div className="capability-list">
@@ -1178,8 +1136,8 @@ function Home() {
               <Icon name="users" />
             </span>
             <div>
-              <h3>Confirm the result</h3>
-              <p>The recipient can also sign the receipt with a wallet. This is not a legal signature.</p>
+              <h3>Keep the evidence</h3>
+              <p>The firm retains the receipt with its existing signing-platform audit record.</p>
             </div>
           </article>
         </div>
