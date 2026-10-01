@@ -493,7 +493,7 @@ function CreateProof({
   }
   async function register() {
     if (!hash || !manifest) return;
-    setStatus("Your wallet will show the BDAG network fee before you approve.");
+    setStatus("Your wallet will show the network fee before you approve.");
     try {
       const result = await connectAndRegister(
         hash.digest,
@@ -617,7 +617,7 @@ function CreateProof({
           <label>
             Earlier receipt{" "}
             <span>
-              Optional. It creates a private version link, not a public chain
+              Optional. It creates a private version link, not a public
               relationship.
             </span>
             <input
@@ -660,7 +660,7 @@ function CreateProof({
           </div>
           <code>{hash.digest}</code>
           <div className="anchor-action">
-            <span>03 · Anchor with BDAG</span>
+            <span>03 · Create proof record</span>
             {registry ? (
               <button className="button button-primary" onClick={register}>
                 Review in wallet <Icon name="arrow" size={18} />
@@ -681,7 +681,7 @@ function CreateProof({
               : "Your wallet approves the anchor"}
           </strong>
           <p>
-            Pay only the BDAG network fee shown by your wallet. DAGIT takes no
+            Your wallet shows the network fee before approval. DAGIT takes no
             separate product fee.
           </p>
         </div>
@@ -746,7 +746,7 @@ function FirmMatterWorkspace() {
   }
   async function recordPreSign() {
     if (!preHash || !preManifest || !matterReference.trim() || !documentRole.trim()) return;
-    setWorking(true); setStatus("Your wallet will show the BDAG network fee for the pre-sign proof.");
+    setWorking(true); setStatus("Your wallet will show the network fee for the pre-sign proof.");
     try {
       const anchored = await anchor(preManifest, preHash);
       const nextMatter = createMatterRecord({ matterReference, documentRole, signingProvider, signingReference, preSignProof: anchored });
@@ -768,7 +768,7 @@ function FirmMatterWorkspace() {
   }
   async function recordFinal() {
     if (!matter || !finalHash || !finalManifest) return;
-    setWorking(true); setStatus("Your wallet will show the BDAG network fee for the final proof.");
+    setWorking(true); setStatus("Your wallet will show the network fee for the final proof.");
     try {
       const anchored = await anchor(finalManifest, finalHash); setFinalReceipt(anchored);
       const pack = createEvidencePack({ matter, finalProof: anchored, auditCertificate: certificate ?? undefined });
@@ -808,7 +808,7 @@ function FirmMatterWorkspace() {
         {finalReceipt && <ReceiptActions receipt={finalReceipt} onReceipt={setFinalReceipt} />}
       </div>
     </section>
-    <div className="wallet-strip"><Icon name="wallet" /><div><strong>{wallet ? `Firm wallet connected: ${shortAddress(wallet.account)}` : "Connect the firm wallet to anchor proofs"}</strong><p>Each proof is approved and paid as a normal BDAG network transaction in the firm’s wallet.</p></div><button className="button button-light" onClick={() => void connect()}>{wallet ? shortAddress(wallet.account) : "Connect wallet"}</button></div>
+    <div className="wallet-strip"><Icon name="wallet" /><div><strong>{wallet ? `Firm wallet connected: ${shortAddress(wallet.account)}` : "Connect the firm wallet to create proofs"}</strong><p>Each proof is approved in the firm’s wallet. The wallet shows the network fee before approval.</p></div><button className="button button-light" onClick={() => void connect()}>{wallet ? shortAddress(wallet.account) : "Connect wallet"}</button></div>
     <p className="admin-status" role="status">{status}</p>
   </main>;
 }
@@ -968,8 +968,8 @@ function VerifyProof() {
         <div>
           <h1>Check the file before you sign.</h1>
           <p>
-            DAGIT checks the exact file on your device, then checks the proof
-            against Chain 1404. No account. No upload.
+            DAGIT checks the exact file on your device, then checks its proof
+            record. No account. No upload.
           </p>
         </div>
         <div className="verify-steps">
@@ -1114,7 +1114,6 @@ function VerifyProof() {
 function Home() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [walletStatus, setWalletStatus] = useState("");
-  const registry = configuredRegistry();
   async function connect() {
     setWalletStatus("Opening your wallet…");
     try {
@@ -1159,9 +1158,6 @@ function Home() {
             choose their own copy. DAGIT tells you whether both files are
             identical, without either person uploading the file.
           </p>
-          <p className="network-attribution">
-            Built on BlockDAG Chain 1404 <span>•</span> Proof transactions use BDAG
-          </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#create-proof">
               Prepare a proof <Icon name="arrow" size={18} />
@@ -1182,7 +1178,7 @@ function Home() {
               <Icon name="users" size={27} />
             </span>
             <span>Shared-version proof</span>
-            <i className="status-dot" aria-label="Live registry configured" />
+            <i className="status-dot" aria-label="Proof service ready" />
           </div>
           <div className="proof-visual" aria-hidden="true">
             <div className="proof-node">
@@ -1212,12 +1208,8 @@ function Home() {
             </li>
           </ul>
           <div className="registry-mini">
-            <span>Chain 1404</span>
-            <strong>
-              {registry
-                ? `Registry ${shortAddress(registry)}`
-                : "Registry status loading"}
-            </strong>
+            <span>Private file check</span>
+            <strong>Proof receipt ready</strong>
           </div>
         </aside>
       </header>
@@ -1234,13 +1226,13 @@ function Home() {
         </div>
         <div>
           <Icon name="chain" />
-          <strong>Anchor when needed</strong>
-          <span>Chain 1404 · BDAG</span>
+          <strong>Create a proof record</strong>
+          <span>Approved in your wallet</span>
         </div>
         <div>
           <Icon name="shield" />
           <strong>Firm record</strong>
-          <span>Chain 1404 proof</span>
+          <span>Evidence for the matter file</span>
         </div>
       </section>
       <section
@@ -1281,7 +1273,7 @@ function Home() {
             </span>
             <div>
               <h3>Check their copy</h3>
-              <p>They select the file they received. DAGIT checks it locally and confirms the Chain 1404 record.</p>
+              <p>They select the file they received. DAGIT checks it locally and confirms the proof record.</p>
             </div>
           </article>
           <article>
@@ -1303,13 +1295,12 @@ function Home() {
       >
         <div>
           <h2 id="registry-title">
-            A public record.
+            A proof record.
             <br />Your file stays private.
           </h2>
           <p>
-            The registry holds a fingerprint and manifest commitment. It never
-            contains your original file or automatically captures its name or
-            metadata.
+            DAGIT records a private file fingerprint. It never contains your
+            original file or automatically captures its name or metadata.
           </p>
         </div>
         <div className="registry-card">
@@ -1318,19 +1309,19 @@ function Home() {
               <Icon name="chain" />
             </span>
             <div>
-              <strong>Chain 1404 registry</strong>
-              <small>BDAG network</small>
+              <strong>DAGIT proof record</strong>
+              <small>Independent verification</small>
             </div>
             <i className="status-dot" />
           </div>
           <dl>
             <div>
-              <dt>On-chain record</dt>
-              <dd>Fingerprint + manifest commitment</dd>
+              <dt>What is recorded</dt>
+              <dd>Fingerprint + proof commitment</dd>
             </div>
             <div>
-              <dt>Registry address</dt>
-              <dd>{registry ?? "Loading configured registry"}</dd>
+              <dt>What you share</dt>
+              <dd>Receipt, link or QR</dd>
             </div>
             <div>
               <dt>Recipient path</dt>
