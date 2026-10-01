@@ -986,6 +986,7 @@ function Home() {
         <a className="wordmark" href="#top">
           DAGIT
         </a>
+        <span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span>
         <div className="nav-links">
           <a href="#how-it-works">How it works</a>
           <a href="/verify">Verify</a>
@@ -994,7 +995,7 @@ function Home() {
           className="button button-primary nav-wallet"
           onClick={() => void connect()}
         >
-          {wallet ? shortAddress(wallet.account) : "Connect wallet"}
+          {wallet ? shortAddress(wallet.account) : "Firm wallet"}
         </button>
       </nav>
       <header className="hero" id="top">
@@ -1008,6 +1009,9 @@ function Home() {
             Send someone a receipt for a document, image or other file. They
             choose their own copy. DAGIT tells you whether both files are
             identical, without either person uploading the file.
+          </p>
+          <p className="network-attribution">
+            Built on BlockDAG Chain 1404 <span>•</span> Proof transactions use BDAG
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#create-proof">
@@ -1193,6 +1197,7 @@ function Home() {
         <a className="wordmark" href="#top">
           DAGIT
         </a>
+        <span className="footer-product-name">Digital Asset Guarantee &amp; Integrity Tool</span>
         <p>Your file. Your copy. Same version.</p>
         <span>
           Proof records a file fingerprint. It does not establish ownership,
