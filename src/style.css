@@ -865,6 +865,10 @@ footer span {
     padding-bottom: 82px;
   }
   .proof-workspace {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
     padding-top: 76px;
     padding-bottom: 76px;
   }
@@ -971,8 +975,15 @@ footer span {
     font-size: 43px;
   }
   .file-panel,
-  .wallet-panel {
+  .wallet-panel,
+  .proof-context {
     padding: 21px;
+  }
+  .proof-workspace {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
   .ready-proof {
     padding: 18px;
