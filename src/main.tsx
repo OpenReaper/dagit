@@ -16,6 +16,14 @@ import {
   createMatterRecord,
   matterRecordIsValid,
 } from "./lib/matter-core";
+import {
+  createFirmMatter,
+  getFirmSession,
+  listFirmMatters,
+  saveFinalFirmProof,
+  type FirmMatter,
+  type FirmSession,
+} from "./lib/firm-api";
 import { readProofByQuorum } from "./lib/chain";
 import {
   acknowledgeReceipt,
@@ -699,8 +707,24 @@ function FirmMatterWorkspace() {
   const [finalHash, setFinalHash] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
   const [certificate, setCertificate] = useState<{ digest: `0x${string}`; byteLength: number } | null>(null);
   const [finalReceipt, setFinalReceipt] = useState<Receipt | null>(null);
+  const [firmSession, setFirmSession] = useState<FirmSession | null>(null);
+  const [firmMatters, setFirmMatters] = useState<FirmMatter[]>([]);
+  const [remoteMatterId, setRemoteMatterId] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState("Connecting to the firm record…");
   const [status, setStatus] = useState("Create the firm’s pre-sign proof first. Files are never uploaded.");
   const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [session, listed] = await Promise.all([getFirmSession(), listFirmMatters()]);
+        setFirmSession(session); setFirmMatters(listed.matters);
+        setBackendStatus(`Connected to ${session.firm.name}. Shared matter metadata is active; files remain local.`);
+      } catch (error) {
+        setBackendStatus(error instanceof Error ? error.message : "The firm record is unavailable.");
+      }
+    })();
+  }, []);
 
   const workflow = { documentRole, signingProvider, signingReference };
   const preManifest = useMemo(() => preHash ? createUnsignedReceipt({ ...preHash, record: { kind: "original", label: documentRole }, workflow }) : null, [preHash, documentRole, signingProvider, signingReference]);
@@ -726,8 +750,9 @@ function FirmMatterWorkspace() {
     try {
       const anchored = await anchor(preManifest, preHash);
       const nextMatter = createMatterRecord({ matterReference, documentRole, signingProvider, signingReference, preSignProof: anchored });
-      setPreReceipt(anchored); setMatter(nextMatter); downloadJson(nextMatter, "dagit-firm-matter-record.json");
-      setStatus("Pre-sign proof recorded. The local firm matter record downloaded; keep it to link the final signed file.");
+      const remote = await createFirmMatter({ referenceAlias: matterReference, documentRole, signingProvider, signingReference, receipt: anchored });
+      setPreReceipt(anchored); setMatter(nextMatter); setRemoteMatterId(remote.matter.id); setFirmMatters((current) => [remote.matter, ...current]); downloadJson(nextMatter, "dagit-firm-matter-record.json");
+      setStatus("Pre-sign proof recorded and saved to the shared firm matter. A portable local record also downloaded as a backup.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Pre-sign proof was not recorded."); }
     finally { setWorking(false); }
   }
@@ -738,7 +763,7 @@ function FirmMatterWorkspace() {
       if (!matterRecordIsValid(candidate)) throw new Error("Choose a valid DAGIT firm matter record.");
       const loaded = candidate as ReturnType<typeof createMatterRecord>;
       setMatter(loaded); setMatterReference(loaded.matterReference); setDocumentRole(loaded.documentRole); setSigningProvider(loaded.signingProvider); setSigningReference(loaded.signingReference); setPreReceipt(loaded.preSignProof);
-      setStatus("Firm matter record loaded locally. Choose the completed file to record its final proof.");
+      setStatus("Portable matter record loaded. Choose the matching shared matter below before saving the final proof.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Matter record could not be loaded."); }
   }
   async function recordFinal() {
@@ -747,14 +772,18 @@ function FirmMatterWorkspace() {
     try {
       const anchored = await anchor(finalManifest, finalHash); setFinalReceipt(anchored);
       const pack = createEvidencePack({ matter, finalProof: anchored, auditCertificate: certificate ?? undefined });
+      if (!remoteMatterId) throw new Error("Choose the shared firm matter before saving the final proof.");
+      await saveFinalFirmProof(remoteMatterId, anchored);
       downloadJson(pack, "dagit-evidence-pack.json");
-      setStatus("Final proof recorded. The evidence pack downloaded with both linked proofs.");
+      setStatus("Final proof recorded, saved to the shared firm matter, and exported as a local evidence pack.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Final proof was not recorded."); }
     finally { setWorking(false); }
   }
   return <main className="admin-page firm-page">
     <nav className="site-nav"><a className="wordmark" href="/">DAGIT</a><a className="back-link" href="/">Public site <Icon name="arrow" size={16} /></a></nav>
-    <header className="admin-hero"><p className="eyebrow">Firm workspace</p><h1>Prepare, confirm, then retain the proof.</h1><p>This workspace is protected for the firm. It creates local proof records only; use your usual signing service separately.</p></header>
+    <header className="admin-hero"><p className="eyebrow">Firm workspace</p><h1>Prepare, confirm, then retain the proof.</h1><p>Matters and proof metadata are shared with the firm. Files, filenames and signing credentials never leave this browser.</p></header>
+    <section className="firm-record-status" aria-live="polite"><Icon name="shield" size={18} /><div><strong>{firmSession ? `${firmSession.member.email} · ${firmSession.member.role}` : "Firm record"}</strong><span>{backendStatus}</span></div></section>
+    {firmMatters.length > 0 && <section className="firm-matter-list" aria-label="Shared firm matters"><div><strong>Shared matters</strong><span>Choose the matching matter before saving a final proof.</span></div><div className="matter-pills">{firmMatters.map((shared) => <button key={shared.id} className={remoteMatterId === shared.id ? "matter-pill selected" : "matter-pill"} onClick={() => { setRemoteMatterId(shared.id); setMatterReference(shared.referenceAlias); setDocumentRole(shared.documentRole); setSigningProvider(shared.signingProvider); setSigningReference(shared.signingReference); setStatus(`Shared matter selected: ${shared.referenceAlias}.`); }}>{shared.referenceAlias}<small>{shared.status} · {shared.permission}</small></button>)}</div></section>}
     <section className="firm-workspace">
       <div className="firm-card">
         <div className="panel-top"><span className="panel-step">01</span><span>Pre-sign version</span></div>
@@ -771,11 +800,11 @@ function FirmMatterWorkspace() {
         <div className="panel-top"><span className="panel-step">02</span><span>Final signed version</span></div>
         <p className="firm-copy">After your signing service completes, record the signed file. DAGIT links it privately to the pre-sign proof and exports the evidence pack.</p>
         <label>Firm matter record <span>Load the local record downloaded in step 1, including after a new browser session.</span><input type="file" accept="application/json" onChange={loadMatter} /></label>
-        {matter && <p className="field-status">Matter loaded: {matter.matterReference}</p>}
+        {matter && <p className="field-status">Matter loaded: {matter.matterReference}{remoteMatterId ? " · shared firm matter selected" : " · select its shared firm matter above"}</p>}
         <label>Completed signed file <input type="file" disabled={!matter} onChange={(e) => { const selected = e.target.files?.[0] ?? null; setFinalFile(selected); setFinalHash(null); }} /></label>
         {finalFile && <button className="button button-secondary" disabled={working} onClick={() => void hashFile(finalFile, setFinalHash, "Creating the final fingerprint…")}>Create fingerprint</button>}
         <label>Signing audit certificate <span>Optional. DAGIT records only its fingerprint in the evidence pack.</span><input type="file" disabled={!matter} onChange={async (e) => { const selected = e.target.files?.[0]; if (selected) await hashFile(selected, setCertificate, "Fingerprinting audit certificate…"); }} /></label>
-        {finalHash && <button className="button button-primary" disabled={working || !configuredRegistry()} onClick={() => void recordFinal()}>Record final proof and export pack <Icon name="arrow" size={17} /></button>}
+        {finalHash && <button className="button button-primary" disabled={working || !configuredRegistry() || !remoteMatterId} onClick={() => void recordFinal()}>Record final proof and export pack <Icon name="arrow" size={17} /></button>}
         {finalReceipt && <ReceiptActions receipt={finalReceipt} onReceipt={setFinalReceipt} />}
       </div>
     </section>

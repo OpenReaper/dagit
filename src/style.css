@@ -114,6 +114,24 @@ a {
 .button-light:hover {
   background: #eaf3ff;
 }
+.firm-record-status,
+.firm-matter-list {
+  width: min(1080px, calc(100% - 40px));
+  margin: 18px auto;
+  border: 1px solid #cfe1f5;
+  border-radius: 14px;
+  background: #f7fbff;
+  padding: 16px 18px;
+}
+.firm-record-status { display: flex; gap: 12px; color: #0957d6; align-items: flex-start; }
+.firm-record-status strong,
+.firm-matter-list strong { display: block; color: #163a70; font-size: 13px; }
+.firm-record-status span,
+.firm-matter-list span { display: block; margin-top: 3px; color: #526983; font-size: 13px; line-height: 1.45; }
+.matter-pills { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+.matter-pill { text-align: left; border: 1px solid #bed2e9; border-radius: 10px; background: #fff; color: #163a70; padding: 9px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.matter-pill small { display: block; margin-top: 3px; color: #6b8198; font-weight: 600; }
+.matter-pill.selected { border-color: #0957d6; box-shadow: 0 0 0 3px rgba(9,87,214,.12); }
 .nav-wallet {
   margin-left: 14px;
 }

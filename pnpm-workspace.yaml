@@ -4,3 +4,7 @@ allowBuilds:
   esbuild: true
   bufferutil: false
   utf-8-validate: false
+  sharp: set this to true or false
+  workerd: set this to true or false
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types@5.20261001.1'
