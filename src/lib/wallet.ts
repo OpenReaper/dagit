@@ -37,6 +37,14 @@ export async function connectWallet(): Promise<ConnectedWallet> {
   return { account: accounts[0] as Address };
 }
 
+/** Signs a one-time DAGIT workspace activation message. This is free and is not a blockchain transaction. */
+export async function signWorkspaceActivation(message: string, account: Address): Promise<Hex> {
+  if (!window.ethereum) throw new Error('No injected wallet was found. Install or unlock a compatible wallet.');
+  const signature = await window.ethereum.request({ method: 'personal_sign', params: [message, account] }) as Hex;
+  if (!/^0x[0-9a-fA-F]{130}$/.test(signature)) throw new Error('The wallet did not return a valid activation signature.');
+  return signature;
+}
+
 export async function connectAndRegister(digest: Hex, manifestDigest: Hex) {
   const registry = configuredRegistry();
   if (!registry) throw new Error('Proof anchoring is not live yet. This demo will not send a transaction.');
