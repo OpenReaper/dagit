@@ -38,21 +38,31 @@ async function actor(request: Request, env: Env, requestId: string): Promise<Act
   const subject = typeof payload.sub === "string" ? payload.sub : "";
   const email = typeof payload.email === "string" ? payload.email.toLowerCase() : "";
   if (!subject || !email) throw new Error("Access identity is incomplete.");
-  let member = await env.DB.prepare("SELECT id, firm_id, email, role FROM members WHERE idp_subject = ? AND status = 'active'").bind(subject).first<{ id: string; firm_id: string; email: string; role: string }>();
+  let member = await env.DB.prepare("SELECT id, firm_id, idp_subject, email, role FROM members WHERE idp_subject = ? AND status = 'active'").bind(subject).first<{ id: string; firm_id: string; idp_subject: string; email: string; role: string }>();
+  // Cloudflare One-time PIN can issue a new subject for the same verified email.
+  // Access has already verified the JWT and the route policy controls which emails
+  // may reach this API, so retain the member record and refresh its provider subject.
+  if (!member) {
+    member = await env.DB.prepare("SELECT id, firm_id, idp_subject, email, role FROM members WHERE email = ? AND status = 'active'").bind(email).first<{ id: string; firm_id: string; idp_subject: string; email: string; role: string }>();
+    if (member && member.idp_subject !== subject) {
+      await env.DB.prepare("UPDATE members SET idp_subject = ? WHERE id = ? AND idp_subject = ? AND status = 'active'").bind(subject, member.id, member.idp_subject).run();
+      member.idp_subject = subject;
+    }
+  }
   if (!member && email === env.INITIAL_OWNER_EMAIL.toLowerCase()) {
     const firmId = crypto.randomUUID(); const memberId = crypto.randomUUID(); const created = now();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO firms (id, legal_name, created_at) VALUES (?, ?, ?)").bind(firmId, "Chauncey Law", created),
       env.DB.prepare("INSERT INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'owner', ?)").bind(memberId, firmId, subject, email, created),
     ]);
-    member = { id: memberId, firm_id: firmId, email, role: "owner" };
+    member = { id: memberId, firm_id: firmId, idp_subject: subject, email, role: "owner" };
   }
   if (!member && email === env.INITIAL_OBSERVER_EMAIL.toLowerCase()) {
     const firm = await env.DB.prepare("SELECT id FROM firms WHERE legal_name = 'Chauncey Law' LIMIT 1").first<{ id: string }>();
     if (firm) {
       const memberId = crypto.randomUUID();
       await env.DB.prepare("INSERT INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'observer', ?)").bind(memberId, firm.id, subject, email, now()).run();
-      member = { id: memberId, firm_id: firm.id, email, role: "observer" };
+      member = { id: memberId, firm_id: firm.id, idp_subject: subject, email, role: "observer" };
     }
   }
   if (!member) throw new Error("You are authenticated but are not a member of this firm workspace.");
