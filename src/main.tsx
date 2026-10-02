@@ -1167,7 +1167,10 @@ function Home() {
         <div className="nav-links">
           <a href="#how-it-works">How it works</a>
           <a href="/verify">Verify</a>
+          <a href="/access">Company access</a>
+          <a href="/register">Register company</a>
         </div>
+        <a className="button button-secondary nav-company" href="/access">Company</a>
         <button
           className="button button-primary nav-wallet"
           onClick={() => void connect()}
@@ -1417,6 +1420,30 @@ function OrganisationRegistration() {
   return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card"><p className="eyebrow">Organisation workspace</p><h1>Create your active workspace.</h1><p>Connect the wallet that will own your workspace. DAGIT creates it immediately—there is no approval queue, account password or email check.</p><form onSubmit={submit}><label>Organisation name<input value={legalName} onChange={(event) => setLegalName(event.target.value)} maxLength={160} required /></label><label>Website or work domain <span>(optional)</span><input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="company.com" maxLength={253} /></label><button className="button button-primary" disabled={sending}>{sending ? "Creating workspace…" : "Connect wallet and create workspace"}</button></form>{status && <p className="field-status" role="status">{status}</p>}<small>Your wallet signs one free activation message. No BDAG is spent, no file is uploaded, and no business data is put on-chain. You can create a proof from the main DAGIT page after activation.</small></section></main>;
 }
 
+type OwnedWorkspace = { organisationId: string; organisationName: string; workspaceId: string | null; workspaceType: string | null; referenceAlias: string | null; role: string };
+
+function OrganisationAccess() {
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [workspaces, setWorkspaces] = useState<OwnedWorkspace[] | null>(null);
+  async function access() {
+    setLoading(true); setStatus("");
+    try {
+      const connected = await connectWallet();
+      const challenge = await fetch("/api/registration/v1/access/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: connected.account }) });
+      const challengeValue: unknown = await challenge.json().catch(() => ({}));
+      if (!challenge.ok || !challengeValue || typeof challengeValue !== "object" || !("challengeId" in challengeValue) || !("message" in challengeValue) || typeof challengeValue.challengeId !== "string" || typeof challengeValue.message !== "string") throw new Error(challengeValue && typeof challengeValue === "object" && "error" in challengeValue && typeof challengeValue.error === "string" ? challengeValue.error : "Workspace access could not start.");
+      const signature = await signWorkspaceActivation(challengeValue.message, connected.account);
+      const response = await fetch("/api/registration/v1/access/complete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ challengeId: challengeValue.challengeId, signature }) });
+      const value: unknown = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof value === "object" && value && "error" in value && typeof value.error === "string" ? value.error : "Workspace access could not be completed.");
+      const rows = typeof value === "object" && value && "workspaces" in value && Array.isArray(value.workspaces) ? value.workspaces as OwnedWorkspace[] : [];
+      setWorkspaces(rows); setStatus(rows.length ? "Your wallet owns the workspace shown below." : "No active workspace belongs to this wallet yet.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Workspace access could not be completed."); } finally { setLoading(false); }
+  }
+  return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><div className="nav-links"><a href="/register">Register company</a><a href="/verify">Verify</a></div><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card"><p className="eyebrow">Company access</p><h1>Open your company workspace.</h1><p>Connect the same wallet used to register your company. DAGIT checks wallet control and shows the active workspaces it owns.</p><button className="button button-primary" onClick={() => void access()} disabled={loading}>{loading ? "Checking workspace…" : "Connect wallet and continue"}</button>{status && <p className="field-status" role="status">{status}</p>}{workspaces && <div className="owned-workspaces" aria-live="polite">{workspaces.map((workspace) => <article key={`${workspace.organisationId}-${workspace.workspaceId ?? "organisation"}`}><strong>{workspace.organisationName}</strong><span>{workspace.referenceAlias ?? "Organisation workspace"} · {workspace.workspaceType ?? "general"} · {workspace.role}</span></article>)}</div>}{workspaces?.length === 0 && <a className="button button-secondary" href="/register">Register a company</a>}<small>This proves wallet control only. It does not send a transaction, upload a file, or verify a company’s real-world identity.</small></section></main>;
+}
+
 function App() {
   useEffect(() => initializeTelemetry(), []);
   if (window.location.pathname === "/firm" || window.location.pathname.startsWith("/firm/")) return <FirmMatterWorkspace />;
@@ -1431,6 +1458,7 @@ function App() {
     window.location.pathname.startsWith("/verify/")
   ) return <><VerifyProof /><AnalyticsConsent /></>;
   if (window.location.pathname === "/register") return <OrganisationRegistration />;
+  if (window.location.pathname === "/access") return <OrganisationAccess />;
   return <><Home /><AnalyticsConsent /></>;
 }
 createRoot(document.getElementById("root")!).render(<App />);

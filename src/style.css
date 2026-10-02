@@ -71,6 +71,10 @@ a {
 .nav-links a:hover {
   color: #0957d6;
 }
+.nav-company { display: none; }
+.owned-workspaces { display: grid; gap: 10px; margin-top: 22px; }
+.owned-workspaces article { display: grid; gap: 5px; padding: 16px; border: 1px solid #d8e6f5; border-radius: 10px; background: #fff; color: #09245a; }
+.owned-workspaces span { color: #58708a; font-size: 13px; }
 .button {
   border: 1px solid transparent;
   border-radius: 10px;
@@ -863,8 +867,9 @@ footer span {
     display: none;
   }
   .product-name { display: none; }
+  .nav-company { display: inline-flex; margin-left: auto; min-height: 44px; padding: 0 12px; }
   .nav-wallet {
-    margin-left: auto;
+    display: none;
   }
   .hero {
     grid-template-columns: 1fr;
