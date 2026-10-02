@@ -1176,36 +1176,37 @@ function Home() {
       </nav>
       <header className="hero" id="top">
         <div className="hero-copy">
+          <p className="hero-eyebrow">Private version confirmation</p>
           <h1>
-            One private version.
+            Know you’re both looking at
             <br />
-            <span>Two people can prove it.</span>
+            <span>the same file.</span>
           </h1>
           <p>
-            Send someone a receipt for a document, image or other file. They
-            choose their own copy. DAGIT tells you whether both files are
-            identical, without either person uploading the file.
+            Create a proof for the version you share. The person receiving it
+            checks their own copy — without either of you uploading the file.
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#create-proof">
-              Prepare a proof <Icon name="arrow" size={18} />
+              Create a proof <Icon name="arrow" size={18} />
             </a>
             <a className="button button-secondary" href="/verify">
-              Verify a received proof
+              Check a received file
             </a>
           </div>
+          <p className="hero-reassurance">No file upload · No account needed to check a file</p>
           {walletStatus && (
             <p className="wallet-status hero-wallet-status" role="status">
               {walletStatus}
             </p>
           )}
         </div>
-        <aside className="integrity-card" aria-label="DAGIT proof integrity">
+        <aside className="integrity-card" aria-label="How DAGIT confirms a file version">
           <div className="integrity-card-head">
             <span className="integrity-emblem">
               <Icon name="users" size={27} />
             </span>
-            <span>Shared-version proof</span>
+            <span>How it works</span>
             <i className="status-dot" aria-label="Proof service ready" />
           </div>
           <div className="proof-visual" aria-hidden="true">
@@ -1224,20 +1225,20 @@ function Home() {
           <ul className="integrity-list">
             <li>
               <Icon name="check" size={17} />
-              <span>Each file stays with its owner</span>
+              <span>Create a private proof</span>
             </li>
             <li>
               <Icon name="check" size={17} />
-              <span>Both parties check exact bytes locally</span>
+              <span>Send the receipt</span>
             </li>
             <li>
               <Icon name="check" size={17} />
-          <span>Each person checks their own copy</span>
+              <span>They check their own copy</span>
             </li>
           </ul>
           <div className="registry-mini">
-            <span>Private file check</span>
-            <strong>Proof receipt ready</strong>
+            <span>Private by default</span>
+            <strong>Files stay on each person’s device</strong>
           </div>
         </aside>
       </header>
