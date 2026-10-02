@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { handleOrganisationApi } from "./organisation-api";
 
 type Actor = { memberId: string; firmId: string; email: string; role: string };
 type Matter = { id: string; referenceAlias: string; documentRole: string; signingProvider: string; signingReference: string; status: string; createdAt: string; permission: string };
@@ -97,6 +98,8 @@ export default {
     const requestId = crypto.randomUUID();
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { "allow": "GET, POST, OPTIONS", "cache-control": "no-store" } });
     const url = new URL(request.url);
+    const organisationResponse = await handleOrganisationApi(request, env, ctx);
+    if (organisationResponse) return organisationResponse;
     if (!url.pathname.startsWith("/firm/api/v1/")) return error("Not found.", 404, requestId);
     try {
       const current = await actor(request, env, requestId);

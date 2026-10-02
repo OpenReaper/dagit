@@ -8,7 +8,8 @@
     "ACCESS_TEAM_DOMAIN": "https://delicate-art-6ba2.cloudflareaccess.com",
     "ACCESS_AUD": "8e79bfc50785a14147d3bda36219624576a3c29483ec06fa8e8cd9995bad405b",
     "INITIAL_OWNER_EMAIL": "awc@chaunceylaw.com",
-    "INITIAL_OBSERVER_EMAIL": "nic@macula.co.za"
+    "INITIAL_OBSERVER_EMAIL": "nic@macula.co.za",
+    "PLATFORM_OPERATOR_EMAIL": "nic@macula.co.za"
   },
   "d1_databases": [
     {

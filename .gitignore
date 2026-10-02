@@ -4,5 +4,6 @@ artifacts/
 .env
 .DS_Store
 .vercel
+.wrangler
 .env*
 .impeccable/
