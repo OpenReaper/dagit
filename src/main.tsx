@@ -1394,6 +1394,24 @@ function AnalyticsConsent() {
   );
 }
 
+function OrganisationRegistration() {
+  const [legalName, setLegalName] = useState("");
+  const [domain, setDomain] = useState("");
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("");
+  const [sending, setSending] = useState(false);
+  async function submit(event: React.FormEvent) {
+    event.preventDefault(); setSending(true); setStatus("");
+    try {
+      const response = await fetch("/api/registration/v1/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ legalName, domain, email }) });
+      const value: unknown = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof value === "object" && value && "error" in value && typeof value.error === "string" ? value.error : "Registration could not be submitted.");
+      setStatus(typeof value === "object" && value && "message" in value && typeof value.message === "string" ? value.message : "Workspace request received.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Registration could not be submitted."); } finally { setSending(false); }
+  }
+  return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card"><p className="eyebrow">Organisation workspace</p><h1>Start a workspace for your team.</h1><p>Create a request using your business email. DAGIT will verify the organisation before activating team access. Files are never part of registration.</p><form onSubmit={submit}><label>Organisation name<input value={legalName} onChange={(event) => setLegalName(event.target.value)} maxLength={160} required /></label><label>Business email domain<input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="company.com" maxLength={253} required /></label><label>Your work email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" maxLength={254} required /></label><button className="button button-primary" disabled={sending}>{sending ? "Submitting…" : "Request workspace"}</button></form>{status && <p className="field-status" role="status">{status}</p>}<small>Registration starts a secure organisation check. It does not upload documents, create a wallet, or give DAGIT access to your email account.</small></section></main>;
+}
+
 function App() {
   useEffect(() => initializeTelemetry(), []);
   if (window.location.pathname === "/firm" || window.location.pathname.startsWith("/firm/")) return <FirmMatterWorkspace />;
@@ -1407,6 +1425,7 @@ function App() {
     window.location.pathname === "/verify" ||
     window.location.pathname.startsWith("/verify/")
   ) return <><VerifyProof /><AnalyticsConsent /></>;
+  if (window.location.pathname === "/register") return <OrganisationRegistration />;
   return <><Home /><AnalyticsConsent /></>;
 }
 createRoot(document.getElementById("root")!).render(<App />);

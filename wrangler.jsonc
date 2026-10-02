@@ -20,6 +20,10 @@
   ],
   "routes": [
     {
+      "pattern": "dagit.macula.co.za/api/registration/*",
+      "zone_name": "macula.co.za"
+    },
+    {
       "pattern": "dagit.macula.co.za/firm/api/*",
       "zone_name": "macula.co.za"
     }
