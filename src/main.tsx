@@ -69,7 +69,7 @@ const formatBytes = (size: number) =>
 const shortAddress = (address: string) =>
   `${address.slice(0, 6)}…${address.slice(-4)}`;
 const kindCopy: Record<ProofKind, string> = {
-  original: "Original version",
+  original: "First recorded version",
   revision: "Revision of an earlier proof",
   final: "Final agreed version",
   evidence: "Supporting record",
@@ -334,7 +334,7 @@ function ReceiptActions({
           errorCorrectionLevel: "M",
         }),
       );
-      setShareStatus("Scan this QR with the original file ready to verify.");
+      setShareStatus("Scan this QR with your copy ready to check.");
       track("proof_qr_created");
     } catch {
       setShareStatus("The QR code could not be created.");
@@ -545,11 +545,11 @@ function CreateProof({
     >
       <div className="workspace-head">
         <div>
-          <h2 id="create-title">For the firm: record the document version.</h2>
+          <h2 id="create-title">Record the version you share.</h2>
         </div>
         <p>
-          The firm records the version it is sending for signature. The client
-          receives a receipt or QR, then checks their own copy of the file.
+          Choose a file and create a proof receipt. The other person checks
+          their own copy, without either of you uploading the file.
         </p>
       </div>
       <div className="proof-grid">
@@ -612,7 +612,7 @@ function CreateProof({
               value={kind}
               onChange={(event) => setKind(event.target.value as ProofKind)}
             >
-              <option value="original">Original version</option>
+              <option value="original">First recorded version</option>
               <option value="revision">Revision</option>
               <option value="final">Final agreed version</option>
               <option value="evidence">Supporting record</option>
@@ -627,7 +627,7 @@ function CreateProof({
               maxLength={120}
               value={label}
               onChange={(event) => setLabel(event.target.value)}
-              placeholder="e.g. Agreement — final review"
+              placeholder="e.g. Project plan — review copy"
             />
           </label>
           <label>
@@ -834,7 +834,7 @@ function VerifyProof() {
   const [file, setFile] = useState<File | null>(null);
   const [verification, setVerification] = useState<Verification>({
     tone: "idle",
-    text: "Open a proof link or choose a receipt and the original file.",
+    text: "Open a proof link or choose a receipt and your copy of the file.",
     onChain: false,
   });
   const [ackStatus, setAckStatus] = useState("");
@@ -845,7 +845,7 @@ function VerifyProof() {
         setReceipt(imported);
         setVerification({
           tone: "idle",
-          text: "Proof receipt loaded from the private link. Choose the original file to verify it.",
+          text: "Proof receipt loaded from the private link. Choose your copy to check it.",
           onChain: false,
         });
       }
@@ -865,7 +865,7 @@ function VerifyProof() {
     track("verification_started");
     setVerification({
       tone: "working",
-      text: "Checking the original file on this device…",
+      text: "Checking your copy on this device…",
       onChain: false,
     });
     try {
@@ -879,7 +879,7 @@ function VerifyProof() {
         track("verification_mismatched");
         return setVerification({
           tone: "fail",
-          text: `This file does not match the recorded version. Do not sign this version. ${local.reason}`,
+          text: `This file does not match the recorded version. Do not rely on this version. ${local.reason}`,
           onChain: false,
         });
       }
@@ -929,11 +929,11 @@ function VerifyProof() {
         });
       const workflow = "workflow" in receipt ? receipt.workflow : null;
       const nextStep = workflow?.signingProvider
-        ? ` Return to your existing ${workflow.signingProvider} signing invitation${workflow.signingReference ? ` (${workflow.signingReference})` : ""}.`
-        : " Contact the firm for the signing invitation.";
+        ? ` Continue with the process you agreed through ${workflow.signingProvider}${workflow.signingReference ? ` (${workflow.signingReference})` : ""}.`
+        : " Keep the verified receipt with the version you rely on.";
       setVerification({
         tone: "pass",
-        text: `Verified. This exact file matches the version recorded by the firm.${nextStep}`,
+        text: `Verified. This exact file matches the recorded version.${nextStep}`,
         onChain: true,
       });
       track("verification_matched");
@@ -991,7 +991,7 @@ function VerifyProof() {
       </nav>
       <header className="verify-hero">
         <div>
-          <h1>Check the file before you sign.</h1>
+          <h1>Check that your copy matches.</h1>
           <p>
             DAGIT checks the exact file on your device, then checks its proof
             record. No account. No upload.
@@ -1001,9 +1001,9 @@ function VerifyProof() {
           <span>1</span>
           <p>Open receipt</p>
           <span>2</span>
-          <p>Choose original file</p>
+          <p>Choose your copy</p>
           <span>3</span>
-          <p>Check before signing</p>
+          <p>Confirm the match</p>
         </div>
       </header>
       <section className="verify-workspace">
@@ -1025,7 +1025,7 @@ function VerifyProof() {
                   setReceipt(await readReceipt(candidate));
                   setVerification({
                     tone: "idle",
-                    text: "Receipt ready. Now choose the original file.",
+                    text: "Receipt ready. Now choose your copy of the file.",
                     onChain: false,
                   });
                 } catch (error) {
@@ -1042,7 +1042,7 @@ function VerifyProof() {
             />
           </label>
           <label>
-            Original file
+            Your copy
             <span>
               Choose the file you received. It is fingerprinted locally.
             </span>
@@ -1104,7 +1104,7 @@ function VerifyProof() {
                 </div>
                 {verification.onChain && "workflow" in receipt && receipt.workflow.signingProvider && (
                   <div>
-                    <dt>Signing service</dt>
+                    <dt>Related service</dt>
                     <dd>{receipt.workflow.signingProvider}{receipt.workflow.signingReference ? ` · ${receipt.workflow.signingReference}` : ""}</dd>
                   </div>
                 )}
@@ -1113,7 +1113,7 @@ function VerifyProof() {
           ) : (
             <p>
               Portable proof links carry the receipt in the URL fragment. DAGIT
-              receives neither the original file nor a proof database record.
+              receives neither your file nor a proof database record.
             </p>
           )}
         </aside>
@@ -1171,7 +1171,7 @@ function Home() {
           className="button button-primary nav-wallet"
           onClick={() => void connect()}
         >
-          {wallet ? shortAddress(wallet.account) : "Firm wallet"}
+          {wallet ? shortAddress(wallet.account) : "Your wallet"}
         </button>
       </nav>
       <header className="hero" id="top">
@@ -1232,7 +1232,7 @@ function Home() {
             </li>
             <li>
               <Icon name="check" size={17} />
-          <span>Client checks their own copy before signing</span>
+          <span>Each person checks their own copy</span>
             </li>
           </ul>
           <div className="registry-mini">
@@ -1259,8 +1259,8 @@ function Home() {
         </div>
         <div>
           <Icon name="shield" />
-          <strong>Firm record</strong>
-          <span>Evidence for the matter file</span>
+          <strong>Keep the evidence</strong>
+          <span>Save the receipt where you work</span>
         </div>
       </section>
       <section
@@ -1272,8 +1272,8 @@ function Home() {
           <h2 id="capability-title">Check that both people have the same file.</h2>
           <p>
             Create a record for a file. Send the receipt to the other person.
-            They check their copy against it. If both files match, they can add
-            a copy of the verification result to their matter file.
+            They check their copy against it. If both files match, each person
+            can keep the receipt with their own records.
           </p>
         </div>
         <div className="capability-list">
@@ -1310,7 +1310,7 @@ function Home() {
             </span>
             <div>
               <h3>Keep the evidence</h3>
-              <p>The firm retains the receipt with its existing signing-platform audit record.</p>
+              <p>Keep the receipt with the records and workflow that matter to you.</p>
             </div>
           </article>
         </div>
@@ -1328,7 +1328,7 @@ function Home() {
           </h2>
           <p>
             DAGIT records a private file fingerprint. It never contains your
-            original file or automatically captures its name or metadata.
+            selected file or automatically captures its name or metadata.
           </p>
         </div>
         <div className="registry-card">
