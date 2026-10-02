@@ -50,19 +50,19 @@ async function actor(request: Request, env: Env, requestId: string): Promise<Act
     }
   }
   if (!member && email === env.INITIAL_OWNER_EMAIL.toLowerCase()) {
-    const firmId = crypto.randomUUID(); const memberId = crypto.randomUUID(); const created = now();
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO firms (id, legal_name, created_at) VALUES (?, ?, ?)").bind(firmId, "Chauncey Law", created),
-      env.DB.prepare("INSERT INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'owner', ?)").bind(memberId, firmId, subject, email, created),
-    ]);
-    member = { id: memberId, firm_id: firmId, idp_subject: subject, email, role: "owner" };
+    const created = now();
+    await env.DB.prepare("INSERT INTO firms (id, legal_name, created_at) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM firms WHERE legal_name = ?)").bind(crypto.randomUUID(), "Chauncey Law", created, "Chauncey Law").run();
+    const firm = await env.DB.prepare("SELECT id FROM firms WHERE legal_name = 'Chauncey Law' LIMIT 1").first<{ id: string }>();
+    if (firm) {
+      await env.DB.prepare("INSERT OR IGNORE INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'owner', ?)").bind(crypto.randomUUID(), firm.id, subject, email, created).run();
+      member = await env.DB.prepare("SELECT id, firm_id, idp_subject, email, role FROM members WHERE email = ? AND status = 'active'").bind(email).first<{ id: string; firm_id: string; idp_subject: string; email: string; role: string }>();
+    }
   }
   if (!member && email === env.INITIAL_OBSERVER_EMAIL.toLowerCase()) {
     const firm = await env.DB.prepare("SELECT id FROM firms WHERE legal_name = 'Chauncey Law' LIMIT 1").first<{ id: string }>();
     if (firm) {
-      const memberId = crypto.randomUUID();
-      await env.DB.prepare("INSERT INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'observer', ?)").bind(memberId, firm.id, subject, email, now()).run();
-      member = { id: memberId, firm_id: firm.id, idp_subject: subject, email, role: "observer" };
+      await env.DB.prepare("INSERT OR IGNORE INTO members (id, firm_id, idp_subject, email, role, created_at) VALUES (?, ?, ?, ?, 'observer', ?)").bind(crypto.randomUUID(), firm.id, subject, email, now()).run();
+      member = await env.DB.prepare("SELECT id, firm_id, idp_subject, email, role FROM members WHERE email = ? AND status = 'active'").bind(email).first<{ id: string; firm_id: string; idp_subject: string; email: string; role: string }>();
     }
   }
   if (!member) throw new Error("You are authenticated but are not a member of this firm workspace.");
