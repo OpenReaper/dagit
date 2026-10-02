@@ -16,7 +16,17 @@ export type DagitEvent =
   | "verification_started"
   | "verification_matched"
   | "verification_mismatched"
-  | "verification_chain_unavailable";
+  | "verification_chain_unavailable"
+  | "company_access_selected"
+  | "company_registration_selected"
+  | "company_registration_started"
+  | "company_wallet_signature_requested"
+  | "company_workspace_activated"
+  | "company_registration_failed"
+  | "company_access_started"
+  | "company_access_completed"
+  | "company_access_empty"
+  | "company_access_failed";
 
 declare global {
   interface Window {

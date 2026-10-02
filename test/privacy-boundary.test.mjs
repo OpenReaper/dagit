@@ -21,3 +21,14 @@ test('the client does not display signing-service context until on-chain verific
   const client = fs.readFileSync(path.join(root, 'src/main.tsx'), 'utf8');
   assert.match(client, /verification\.onChain && "workflow" in receipt && receipt\.workflow\.signingProvider/);
 });
+
+test('company analytics has an explicit zero-parameter allowlist', () => {
+  const telemetry = fs.readFileSync(path.join(root, 'src/lib/telemetry.ts'), 'utf8');
+  const client = fs.readFileSync(path.join(root, 'src/main.tsx'), 'utf8');
+  assert.match(telemetry, /company_workspace_activated/);
+  assert.match(telemetry, /company_access_empty/);
+  assert.match(telemetry, /gtag\?\.\("event", event\)/);
+  assert.doesNotMatch(telemetry, /gtag\?\.\("event", event,/);
+  assert.match(client, /<><OrganisationRegistration \/><AnalyticsConsent \/><\/>/);
+  assert.match(client, /<><OrganisationAccess \/><AnalyticsConsent \/><\/>/);
+});
