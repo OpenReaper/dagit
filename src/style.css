@@ -75,6 +75,17 @@ a {
 .owned-workspaces { display: grid; gap: 10px; margin-top: 22px; }
 .owned-workspaces article { display: grid; gap: 5px; padding: 16px; border: 1px solid #d8e6f5; border-radius: 10px; background: #fff; color: #09245a; }
 .owned-workspaces span { color: #58708a; font-size: 13px; }
+.owned-workspaces small { color: #6c8199; font-size: 12px; }
+.workspace-history { display: grid; gap: 14px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #d8e6f5; }
+.workspace-history h2 { margin: 0; color: #09245a; font-size: 20px; letter-spacing: -.03em; }
+.workspace-history > p { margin: 0; color: #58708a; font-size: 13px; line-height: 1.55; }
+.workspace-history label { display: grid; gap: 7px; color: #163a70; font-size: 13px; font-weight: 700; }
+.workspace-history input, .workspace-history select { width: 100%; min-height: 45px; border: 1px solid #bfd2e8; border-radius: 9px; background: #fff; padding: 0 12px; color: #09245a; }
+.workspace-create { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto; align-items: end; gap: 10px; }
+.proof-history-list { display: grid; gap: 9px; }
+.proof-history-list article { display: grid; gap: 4px; padding: 13px; border: 1px solid #d8e6f5; border-radius: 9px; background: #fff; color: #09245a; }
+.proof-history-list span, .proof-history-list small, .empty-history { color: #58708a; font-size: 12px; line-height: 1.45; }
+.verification-result strong { display: block; margin-bottom: 5px; letter-spacing: .07em; font-size: 11px; }
 .button {
   border: 1px solid transparent;
   border-radius: 10px;
@@ -871,6 +882,7 @@ footer span {
   .nav-wallet {
     display: none;
   }
+  .workspace-create { grid-template-columns: 1fr; }
   .hero {
     grid-template-columns: 1fr;
     gap: 38px;

@@ -1066,6 +1066,8 @@ function VerifyProof() {
             className={`verification-result ${verification.tone}`}
             role="status"
           >
+            {verification.tone === "pass" && <strong>MATCH</strong>}
+            {verification.tone === "fail" && <strong>{verification.text.startsWith("This file does not match") ? "NO MATCH" : "CHECK NOT COMPLETE"}</strong>}
             {verification.text}
           </p>
         </div>
@@ -1423,12 +1425,20 @@ function OrganisationRegistration() {
   return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card"><p className="eyebrow">Organisation workspace</p><h1>Create your active workspace.</h1><p>Connect the wallet that will own your workspace. DAGIT creates it immediately—there is no approval queue, account password or email check.</p><form onSubmit={submit}><label>Organisation name<input value={legalName} onChange={(event) => setLegalName(event.target.value)} maxLength={160} required /></label><label>Website or work domain <span>(optional)</span><input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="company.com" maxLength={253} /></label><button className="button button-primary" disabled={sending}>{sending ? "Creating workspace…" : "Connect wallet and create workspace"}</button></form>{status && <p className="field-status" role="status">{status}</p>}<small>Your wallet signs one free activation message. No BDAG is spent, no file is uploaded, and no business data is put on-chain. You can create a proof from the main DAGIT page after activation.</small></section></main>;
 }
 
-type OwnedWorkspace = { organisationId: string; organisationName: string; workspaceId: string | null; workspaceType: string | null; referenceAlias: string | null; role: string };
+type OwnedWorkspace = { organisationId: string; organisationName: string; workspaceId: string | null; workspaceType: string | null; referenceAlias: string | null; role: string; proofCount?: number; latestProofAt?: string | null };
+type WorkspaceProof = { id: string; workspaceId: string; stage: string; digest: string; manifestDigest: string; transactionHash: string; createdAt: string; recordKind?: string | null; parentManifestDigest?: string | null };
 
 function OrganisationAccess() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [workspaces, setWorkspaces] = useState<OwnedWorkspace[] | null>(null);
+  const [proofs, setProofs] = useState<WorkspaceProof[]>([]);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [workspaceId, setWorkspaceId] = useState("");
+  const [savingProof, setSavingProof] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [projectType, setProjectType] = useState("general");
+  const [creatingProject, setCreatingProject] = useState(false);
   async function access() {
     setLoading(true); setStatus("");
     try {
@@ -1442,11 +1452,51 @@ function OrganisationAccess() {
       const value: unknown = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof value === "object" && value && "error" in value && typeof value.error === "string" ? value.error : "Workspace access could not be completed.");
       const rows = typeof value === "object" && value && "workspaces" in value && Array.isArray(value.workspaces) ? value.workspaces as OwnedWorkspace[] : [];
-      setWorkspaces(rows); setStatus(rows.length ? "Your wallet owns the workspace shown below." : "No active workspace belongs to this wallet yet.");
+      const history = typeof value === "object" && value && "proofs" in value && Array.isArray(value.proofs) ? value.proofs as WorkspaceProof[] : [];
+      setWorkspaces(rows); setProofs(history); setWorkspaceId(rows.find((workspace) => workspace.workspaceId)?.workspaceId ?? ""); setStatus(rows.length ? "Your wallet owns the workspace shown below." : "No active workspace belongs to this wallet yet.");
       track(rows.length ? "company_access_completed" : "company_access_empty");
     } catch (error) { track("company_access_failed"); setStatus(error instanceof Error ? error.message : "Workspace access could not be completed."); } finally { setLoading(false); }
   }
-  return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><div className="nav-links"><a href="/register">Register company</a><a href="/verify">Verify</a></div><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card"><p className="eyebrow">Company access</p><h1>Open your company workspace.</h1><p>Connect the same wallet used to register your company. DAGIT checks wallet control and shows the active workspaces it owns.</p><button className="button button-primary" onClick={() => void access()} disabled={loading}>{loading ? "Checking workspace…" : "Connect wallet and continue"}</button>{status && <p className="field-status" role="status">{status}</p>}{workspaces && <div className="owned-workspaces" aria-live="polite">{workspaces.map((workspace) => <article key={`${workspace.organisationId}-${workspace.workspaceId ?? "organisation"}`}><strong>{workspace.organisationName}</strong><span>{workspace.referenceAlias ?? "Organisation workspace"} · {workspace.workspaceType ?? "general"} · {workspace.role}</span></article>)}</div>}{workspaces?.length === 0 && <a className="button button-secondary" href="/register">Register a company</a>}<small>This proves wallet control only. It does not send a transaction, upload a file, or verify a company’s real-world identity.</small></section></main>;
+  async function saveProof() {
+    if (!receipt || !workspaceId) return;
+    setSavingProof(true); setStatus("");
+    try {
+      const connected = await connectWallet();
+      const challenge = await fetch("/api/registration/v1/proof/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: connected.account, workspaceId }) });
+      const challengeValue: unknown = await challenge.json().catch(() => ({}));
+      if (!challenge.ok || !challengeValue || typeof challengeValue !== "object" || !("challengeId" in challengeValue) || !("message" in challengeValue) || typeof challengeValue.challengeId !== "string" || typeof challengeValue.message !== "string") throw new Error(challengeValue && typeof challengeValue === "object" && "error" in challengeValue && typeof challengeValue.error === "string" ? challengeValue.error : "Proof history update could not start.");
+      const signature = await signWorkspaceActivation(challengeValue.message, connected.account);
+      const response = await fetch("/api/registration/v1/proof/complete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ challengeId: challengeValue.challengeId, signature, receipt }) });
+      const value: unknown = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof value === "object" && value && "error" in value && typeof value.error === "string" ? value.error : "Proof history could not be updated.");
+      setStatus(typeof value === "object" && value && "message" in value && typeof value.message === "string" ? value.message : "Proof receipt saved.");
+      if (typeof value === "object" && value && "proof" in value && value.proof && typeof value.proof === "object" && "id" in value.proof && typeof value.proof.id === "string") {
+        const saved = value.proof as { id: string; workspaceId: string; stage: string; digest: string; manifestDigest: string; transactionHash: string };
+        const record = "record" in receipt ? receipt.record : null;
+        setProofs((current) => [{ ...saved, createdAt: new Date().toISOString(), recordKind: record?.kind ?? "original", parentManifestDigest: record?.parent?.manifestDigest ?? null }, ...current]);
+        setWorkspaces((current) => current?.map((workspace) => workspace.workspaceId === saved.workspaceId ? { ...workspace, proofCount: (workspace.proofCount ?? 0) + 1, latestProofAt: new Date().toISOString() } : workspace) ?? null);
+      }
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Proof history could not be updated."); } finally { setSavingProof(false); }
+  }
+  async function createProject() {
+    const organisationId = workspaces?.find((workspace) => workspace.workspaceId)?.organisationId;
+    if (!organisationId || !projectName.trim()) return;
+    setCreatingProject(true); setStatus("");
+    try {
+      const connected = await connectWallet();
+      const challenge = await fetch("/api/registration/v1/project/challenge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: connected.account, organisationId }) });
+      const challengeValue: unknown = await challenge.json().catch(() => ({}));
+      if (!challenge.ok || !challengeValue || typeof challengeValue !== "object" || !("challengeId" in challengeValue) || !("message" in challengeValue) || typeof challengeValue.challengeId !== "string" || typeof challengeValue.message !== "string") throw new Error(challengeValue && typeof challengeValue === "object" && "error" in challengeValue && typeof challengeValue.error === "string" ? challengeValue.error : "Workspace creation could not start.");
+      const signature = await signWorkspaceActivation(challengeValue.message, connected.account);
+      const response = await fetch("/api/registration/v1/project/complete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ challengeId: challengeValue.challengeId, signature, referenceAlias: projectName, workspaceType: projectType }) });
+      const value: unknown = await response.json().catch(() => ({}));
+      if (!response.ok || !value || typeof value !== "object" || !("workspace" in value) || !value.workspace || typeof value.workspace !== "object") throw new Error(value && typeof value === "object" && "error" in value && typeof value.error === "string" ? value.error : "Workspace could not be created.");
+      const created = value.workspace as { id: string; organisationId: string; referenceAlias: string; type: string; proofCount: number };
+      setWorkspaces((current) => [...(current ?? []), { organisationId: created.organisationId, organisationName: workspaces?.find((workspace) => workspace.organisationId === created.organisationId)?.organisationName ?? "Organisation", workspaceId: created.id, workspaceType: created.type, referenceAlias: created.referenceAlias, role: "administrator", proofCount: 0, latestProofAt: null }]);
+      setWorkspaceId(created.id); setProjectName(""); setStatus("Workspace created. You can now save proof receipts to it.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Workspace could not be created."); } finally { setCreatingProject(false); }
+  }
+  return <main className="register-page"><nav className="site-nav" aria-label="Main navigation"><a className="wordmark" href="/">DAGIT</a><span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span><div className="nav-links"><a href="/register">Register company</a><a href="/verify">Verify</a></div><a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a></nav><section className="register-card access-card"><p className="eyebrow">Company access</p><h1>Open your company workspace.</h1><p>Connect the same wallet used to register your company. DAGIT checks wallet control and shows the active workspaces it owns.</p><button className="button button-primary" onClick={() => void access()} disabled={loading}>{loading ? "Checking workspace…" : "Connect wallet and continue"}</button>{status && <p className="field-status" role="status">{status}</p>}{workspaces && <div className="owned-workspaces" aria-live="polite">{workspaces.map((workspace) => <article key={`${workspace.organisationId}-${workspace.workspaceId ?? "organisation"}`}><strong>{workspace.organisationName}</strong><span>{workspace.referenceAlias ?? "Organisation workspace"} · {workspace.workspaceType ?? "general"} · {workspace.role}</span><small>{workspace.proofCount ?? 0} proof record{workspace.proofCount === 1 ? "" : "s"}{workspace.latestProofAt ? ` · latest ${new Date(workspace.latestProofAt).toLocaleDateString()}` : ""}</small></article>)}</div>}{workspaces && workspaces.length > 0 && <section className="workspace-history"><h2>Projects and proof history</h2><p>Use a separate workspace for a matter, project, property, contractor record or personal file set. Save a proof receipt to find its record later. DAGIT stores receipt metadata, never the file.</p><div className="workspace-create"><label>New workspace<input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={160} placeholder="e.g. North Street contract" /></label><label>Type<select value={projectType} onChange={(event) => setProjectType(event.target.value)}><option value="general">Project</option><option value="legal">Matter</option><option value="contractor">Contractor record</option><option value="property">Property</option><option value="personal">Personal</option></select></label><button className="button button-secondary" onClick={() => void createProject()} disabled={!projectName.trim() || creatingProject}>{creatingProject ? "Creating workspace…" : "Create workspace"}</button></div><label>Proof receipt<input type="file" accept="application/json" onChange={async (event) => { const selected = event.target.files?.[0]; if (!selected) return; try { setReceipt(await readReceipt(selected)); setStatus("Proof receipt ready to save. The file itself was not selected or uploaded."); } catch (error) { setStatus(error instanceof Error ? error.message : "Choose a valid DAGIT proof receipt."); } }} /></label><label>Save to workspace<select value={workspaceId} onChange={(event) => setWorkspaceId(event.target.value)}>{workspaces.filter((workspace) => workspace.workspaceId).map((workspace) => <option key={workspace.workspaceId} value={workspace.workspaceId ?? ""}>{workspace.organisationName} · {workspace.referenceAlias ?? "Workspace"}</option>)}</select></label><button className="button button-secondary" onClick={() => void saveProof()} disabled={!receipt || !workspaceId || savingProof}>{savingProof ? "Saving proof history…" : "Save proof receipt"}</button>{proofs.length > 0 ? <div className="proof-history-list">{proofs.map((proof) => <article key={proof.id}><strong>{proof.recordKind ?? proof.stage}</strong><span>Recorded {new Date(proof.createdAt).toLocaleString()} · {shortAddress(proof.transactionHash)}</span>{proof.parentManifestDigest && <small>Linked to an earlier pre-sign proof</small>}</article>)}</div> : <p className="empty-history">No proof receipts saved here yet.</p>}</section>}{workspaces?.length === 0 && <a className="button button-secondary" href="/register">Register a company</a>}<small>This proves wallet control only. It does not send a transaction, upload a file, or verify a company’s real-world identity.</small></section></main>;
 }
 
 function App() {
