@@ -13,8 +13,8 @@ A proof shows that a wallet registered a supplied digest in an identifiable Chai
 The following documents are maintained with the product. The public service notices are available at `https://dagit.macula.co.za/legal`; they set out DAGIT's narrow technical boundaries, privacy/data position, receipt wording, retention/deletion route, providers, support and incident process.
 
 - [User guide](docs/USER_GUIDE.md) — the practical firm and recipient workflow.
-- [Terms of use — draft](docs/TERMS_OF_USE_DRAFT.md) — service boundary, acceptable use, and liability positions to be completed by counsel.
-- [Privacy notice — draft](docs/PRIVACY_NOTICE_DRAFT.md) — what DAGIT processes, what it does not receive, and the limits of an immutable blockchain record.
+- [Terms of use](docs/TERMS_OF_USE.md) — service boundary and acceptable use.
+- [Privacy notice](docs/PRIVACY_NOTICE.md) — what DAGIT processes, what it does not receive, and the limits of an immutable blockchain record.
 - [Firm data handling and retention standard](docs/FIRM_DATA_HANDLING_AND_RETENTION_STANDARD.md) — operating controls for the firm workspace.
 - [Security and incident response standard](docs/SECURITY_AND_INCIDENT_RESPONSE.md) — access, incident, and recovery procedure.
 

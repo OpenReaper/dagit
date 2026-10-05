@@ -1,10 +1,9 @@
-# DAGIT privacy and data notice
+# DAGIT privacy notice
 
-**Status:** Published product notice
 **Effective date:** 5 October 2026
 **Service contact:** support@macula.co.za
 
-DAGIT is presented by Macula. This notice describes the information handled by the current DAGIT product. It should be read with the service terms and is deliberately narrow because DAGIT is not a document repository or identity/signing service.
+DAGIT is presented by Macula. This notice explains how DAGIT handles information. DAGIT is not a document repository or identity/signing service.
 
 ## The short version
 

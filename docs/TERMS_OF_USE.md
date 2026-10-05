@@ -1,10 +1,9 @@
-# DAGIT service terms and product boundaries
+# DAGIT terms of use
 
-**Status:** Published product notice
 **Effective date:** 5 October 2026
 **Support:** support@macula.co.za
 
-These service terms explain the technical boundaries of DAGIT — Digital Asset Guarantee & Integrity Tool. DAGIT is presented by Macula. They do not turn a DAGIT proof into a legal signature, identity check, ownership record, or professional opinion.
+These terms explain how to use DAGIT — Digital Asset Guarantee & Integrity Tool. DAGIT is presented by Macula. A DAGIT proof does not replace a legal signature, identity check, ownership record, or professional advice.
 
 ## 1. Service
 

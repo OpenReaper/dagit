@@ -1134,7 +1134,7 @@ function VerifyProof() {
           DAGIT
         </a>
         <p>One private version. Independently checked.</p>
-        <a className="footer-link" href="/legal">Service notices</a>
+        <a className="footer-link" href="/legal">Legal &amp; privacy</a>
       </footer>
     </main>
   );
@@ -1375,7 +1375,7 @@ function Home() {
         </a>
         <span className="footer-product-name">Digital Asset Guarantee &amp; Integrity Tool</span>
         <p>Your file. Your copy. Same version.</p>
-        <a className="footer-link" href="/legal">Service notices</a>
+        <a className="footer-link" href="/legal">Legal &amp; privacy</a>
         <span>
           Proof records a file fingerprint. It does not establish ownership,
           authorship, legal validity, identity, or truth.
@@ -1410,21 +1410,21 @@ function LegalNotices() {
       <a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a>
     </nav>
     <section className="legal-intro">
-      <p className="eyebrow">Service notices · effective 5 October 2026</p>
-      <h1>Clear product boundaries.</h1>
-      <p>DAGIT confirms whether private file versions match. It is not a document store, signing provider, wallet custodian, identity check or legal advice service.</p>
-      <p>Support, privacy, deletion and product-security requests: <a href="mailto:support@macula.co.za">support@macula.co.za</a>.</p>
+      <p className="eyebrow">Legal &amp; privacy · effective 5 October 2026</p>
+      <h1>Private by design.</h1>
+      <p>DAGIT helps people check whether they have the same private file version. The file stays on each person’s device.</p>
+      <p>Need help? Email <a href="mailto:support@macula.co.za">support@macula.co.za</a>.</p>
     </section>
     <section className="legal-grid" aria-label="DAGIT service notices">
       <article>
-        <h2>Terms of use</h2>
-        <p>Use DAGIT only for files and workflows you are entitled to use. Check every wallet network and fee prompt yourself. Keep your own document, signing and evidence records.</p>
-        <p>A proof records a fingerprint and a public blockchain transaction. It does not prove identity, authority, ownership, authorship, delivery, consent, legal execution, truth or enforceability.</p>
+        <h2>Using DAGIT</h2>
+        <p>Use DAGIT only for files you are entitled to use. Check each wallet network and fee prompt before you approve it. Keep your own document, signing and evidence records.</p>
+        <p>A proof shows that a fingerprint was recorded. It does not prove who made, sent, received, signed or owns a file.</p>
       </article>
       <article>
-        <h2>Privacy</h2>
-        <p>Your selected file stays in your browser. DAGIT does not intentionally upload or store its bytes, filename, content or metadata.</p>
-        <p>When you approve an anchor, the proof commitment, wallet address, transaction and timestamp become public Chain 1404 data. Public blockchain data cannot generally be deleted.</p>
+        <h2>Your privacy</h2>
+        <p>Your selected file stays in your browser. DAGIT does not upload or keep the file, its name or its contents.</p>
+        <p>When you approve a proof, its fingerprint, wallet address, transaction and timestamp are recorded on Chain 1404. Public blockchain records cannot generally be deleted.</p>
       </article>
       <article>
         <h2>Receipt wording</h2>
@@ -1432,12 +1432,12 @@ function LegalNotices() {
         <p><strong>What it does not mean:</strong> it is not proof of who created, signed, sent, received or owns a file, or whether its content is accurate or legally effective.</p>
       </article>
       <article>
-        <h2>Retention and deletion</h2>
-        <p>DAGIT does not keep your selected files. Wallet-owned workspace metadata stays while the workspace is active. The workspace owner can request off-chain metadata deletion through support; valid requests are actioned within 30 days unless limited retention is needed for security, fraud prevention, disputes or legal obligations.</p>
+        <h2>Your workspace</h2>
+        <p>DAGIT does not keep your selected files. Your workspace keeps the details needed to find saved proofs while it is active. The owner can ask us to remove that workspace information by emailing support. We action valid requests within 30 days, except where we need limited information for security, fraud prevention, disputes or law.</p>
       </article>
       <article>
-        <h2>Providers</h2>
-        <p>Vercel hosts the public application. Cloudflare provides DNS, edge security, protected-access and limited workspace metadata services. Google Analytics and Tag Manager operate only when public visitors allow analytics. Chain 1404 and the user’s chosen wallet handle user-approved anchors.</p>
+        <h2>Our service partners</h2>
+        <p>We use trusted hosting and security partners to run DAGIT. Optional product analytics only run when you allow them. Chain 1404 and your chosen wallet handle the proof you approve.</p>
       </article>
       <article>
         <h2>Incident process</h2>
