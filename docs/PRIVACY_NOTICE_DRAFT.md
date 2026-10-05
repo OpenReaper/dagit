@@ -1,10 +1,10 @@
-# DAGIT privacy notice — draft for legal review
+# DAGIT privacy and data notice
 
-**Status:** Draft only. This is a review package, not an effective public privacy notice. Product owner and privacy counsel must complete the bracketed fields, approve the text, assign an effective date, and publish it at a stable public URL before production use by clients.
+**Status:** Published product notice
+**Effective date:** 5 October 2026
+**Service contact:** support@macula.co.za
 
-**Controller / provider:** [legal entity name, registration details, address and contact email]
-
-**Effective date:** [to be approved]
+DAGIT is presented by Macula. This notice describes the information handled by the current DAGIT product. It should be read with the service terms and is deliberately narrow because DAGIT is not a document repository or identity/signing service.
 
 ## The short version
 
@@ -32,7 +32,7 @@ The provider processes the limited service information needed to:
 - maintain security, audit activity, prevent misuse, and resolve technical incidents; and
 - meet legal obligations that apply to the provider.
 
-The legal bases, processor details, transfer mechanism, retention periods, and rights-contact route must be completed by privacy counsel for each launched service model and jurisdiction.
+The current public product processes this limited information only to provide the requested proof or workspace function, keep the service secure, and respond to a support or rights request. Where a law gives a user additional privacy rights, requests can be sent to support@macula.co.za.
 
 ## Public blockchain records
 
@@ -52,19 +52,29 @@ Analytics does not run in the protected firm workspace. Firm operational records
 
 ## Retention and deletion
 
-The provider must set and publish its service retention schedule before storing firm workspace metadata. A firm must configure its own approved matter retention and legal-hold process. Requests to delete off-chain account or workspace metadata will be assessed under the applicable law and contract. Public blockchain entries cannot generally be deleted or altered.
+Selected files are not retained by DAGIT. Portable receipts remain with the person who saves them. Public blockchain anchors cannot generally be deleted or altered.
+
+For the public wallet-owned workspace, DAGIT retains the organisation name, wallet address, workspace aliases, anchored proof-receipt metadata and operational audit records while the workspace remains active. A workspace owner may request deletion of its off-chain workspace metadata through support@macula.co.za. DAGIT will action a valid request within 30 days unless it needs limited information for security, fraud prevention, dispute handling, or a legal obligation. Deletion does not erase the public Chain 1404 transaction or a receipt another person holds.
+
+The protected firm workflow is separate: the firm sets its own matter retention and legal-hold rules and remains responsible for its case and signing records.
 
 ## Security
 
 DAGIT uses local browser hashing, self-custody wallet approval, access controls for protected firm routes, and server-side checks for authorised workspace requests. No system can promise absolute security. Users must keep their wallet and account credentials secure and promptly report suspected compromise.
 
-## Changes and contact
+## Providers and subprocessors
 
-Before publication, complete:
+The current product uses the following provider categories:
 
-- privacy contact: [email/address];
-- data protection officer or representative, where required: [details];
-- list of hosting, identity, blockchain, and support subprocessors: [details];
-- cross-border transfer information: [details];
-- rights request method and complaints authority: [details]; and
-- version history and material-change notice process: [details].
+| Provider | Purpose | Data boundary |
+| --- | --- | --- |
+| Vercel | Public web application hosting | Standard web request data; no selected file content is intentionally sent by DAGIT. |
+| Cloudflare | DNS, edge security, protected workspace access and metadata Worker/D1 service | Request/security data and only the protected-workspace metadata described above. |
+| Google Analytics and Google Tag Manager | Optional public product analytics, only after the visitor allows analytics | Zero-parameter product events; no files, filenames, hashes, receipts, wallets, emails or workspace identifiers. |
+| Chain 1404 and user-selected wallet software | User-approved proof anchoring and verification | Public transaction and proof commitment data; DAGIT does not hold wallet keys. |
+
+The product may update these providers as it changes. Material changes to this notice will be posted on the DAGIT service-notices page with an updated effective date.
+
+## Contact
+
+For privacy, deletion, security or support requests, email [support@macula.co.za](mailto:support@macula.co.za). Do not include a file, private key, password, seed phrase, identity document or other sensitive document content in an email request.

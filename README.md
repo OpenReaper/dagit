@@ -10,7 +10,7 @@ A proof shows that a wallet registered a supplied digest in an identifiable Chai
 
 ## Documentation and policy pack
 
-The following documents are maintained with the product. The three policy documents are **drafts for legal and privacy review**: they must be approved, assigned an effective date, and published at stable URLs before a firm relies on DAGIT in a live client workflow.
+The following documents are maintained with the product. The public service notices are available at `https://dagit.macula.co.za/legal`; they set out DAGIT's narrow technical boundaries, privacy/data position, receipt wording, retention/deletion route, providers, support and incident process.
 
 - [User guide](docs/USER_GUIDE.md) — the practical firm and recipient workflow.
 - [Terms of use — draft](docs/TERMS_OF_USE_DRAFT.md) — service boundary, acceptable use, and liability positions to be completed by counsel.

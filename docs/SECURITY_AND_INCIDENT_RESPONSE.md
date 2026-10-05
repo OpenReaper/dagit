@@ -1,6 +1,6 @@
 # DAGIT security and incident response standard
 
-**Status:** Operational baseline. This document complements, and does not replace, the firm’s own information-security and incident-response policies.
+**Status:** Published operational standard. This document complements, and does not replace, a firm’s own information-security and incident-response policies.
 
 ## Security model
 
@@ -50,6 +50,8 @@
 ## Service support boundary
 
 DAGIT operations can investigate availability and product-security events in the service boundary. They cannot retrieve a file, reconstruct a wallet, authenticate a signer, access a firm’s signing-provider account, or determine a document’s legal effect.
+
+Report a suspected product-security event to [support@macula.co.za](mailto:support@macula.co.za). Do not email selected files, private keys, seed phrases, passwords or signing-provider credentials.
 
 ## Test cadence
 

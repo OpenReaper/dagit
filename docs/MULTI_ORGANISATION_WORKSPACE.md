@@ -1,9 +1,22 @@
 # DAGIT multi-organisation workspace
 
-Status: implementation foundation — **not yet production-enabled for external organisations**.  
-Last updated: 2026-10-02
+Status: two deliberately separate paths — updated 2026-10-05.
 
-## What this build adds
+## Choose the right organisation path
+
+### Live self-service workspace
+
+Any person or business can use the public **Register company** route now. The owner connects a self-custody wallet, signs a one-time activation message, and receives an active organisation with a general workspace. That owner can then create a project, matter, contractor, property, or personal workspace and save already-anchored DAGIT receipt metadata to it.
+
+- There is no approval queue, email login, identity check, domain verification, billing step, or file upload.
+- The wallet proves control of the workspace only. It does not prove a company, legal authority, domain ownership, or real-world identity.
+- The live self-service model is a one-owner-wallet workspace. It is not a staff collaboration, verified-company, SSO, or employee-offboarding system.
+
+### Future managed organisation workspace
+
+The `/firm/api/v2` model described below is retained for a future multi-staff organisation product. It is not exposed through the public company registration journey and must not be described as active enterprise onboarding.
+
+## Future managed-workspace foundation
 
 The Worker now has an additive `/firm/api/v2` organisation/workspace API and `0002_organisation_workspaces.sql` migration. It leaves the current `/firm/api/v1` Chauncey Law pilot unchanged.
 
@@ -33,9 +46,9 @@ identity → organisation membership → workspace membership → proof metadata
 
 The current usage endpoint reports workspaces/proofs, plan code, and retention setting. It is deliberately **not** a payment integration. Billing, tax, invoices, and payment collection need an approved merchant/provider and commercial terms before activation.
 
-## Production enablement gates
+## Future managed-workspace enablement gates
 
-Do not invite an external organisation until all of these are completed:
+Do not invite staff or represent this managed path as available until all of these are completed:
 
 1. Apply the v2 migration to a backup-verified production D1 database.
 2. Create a dedicated organisation-workspace Cloudflare Access application and audience. The current firm preview policy must not be widened to admit arbitrary organisations.

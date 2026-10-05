@@ -1,10 +1,10 @@
-# DAGIT terms of use — draft for legal review
+# DAGIT service terms and product boundaries
 
-**Status:** Draft only. Counsel must complete the commercial party, governing-law, dispute, consumer, liability, and notice provisions before this can become binding terms. Do not label this document “Terms of Use” on the public service until it has an approved effective date and a stable public URL.
+**Status:** Published product notice
+**Effective date:** 5 October 2026
+**Support:** support@macula.co.za
 
-**Provider:** [legal entity name and address]
-
-**Effective date:** [to be approved]
+These service terms explain the technical boundaries of DAGIT — Digital Asset Guarantee & Integrity Tool. DAGIT is presented by Macula. They do not turn a DAGIT proof into a legal signature, identity check, ownership record, or professional opinion.
 
 ## 1. Service
 
@@ -51,10 +51,10 @@ Where a firm workspace is provided, the firm is responsible for authorising staf
 
 The provider may change, suspend, or retire features where reasonably necessary for security, maintenance, legal compliance, or product operation. The service depends on browsers, wallet software, hosting providers, identity providers, and blockchain infrastructure. Availability and verification results are not guaranteed.
 
-## 8. Disclaimers, liability and disputes
+## 8. Service limits and availability
 
-[Counsel must draft these clauses for the service model, target markets, and mandatory consumer/professional law. They must not be copied from a generic template without review.]
+DAGIT is provided as a technical integrity tool. It depends on the user’s browser, device, wallet, internet connection, Chain 1404 nodes, hosting and identity providers. A failure to obtain a chain result is not a match. Users must keep their own document, signing, identity and evidence records.
 
-## 9. Contact
+## 9. Support and incident contact
 
-[Complete provider support and legal-notice contacts.]
+For product support, privacy questions, a request concerning off-chain workspace metadata, or a suspected product-security incident, contact [support@macula.co.za](mailto:support@macula.co.za). DAGIT support cannot retrieve a file, recover a wallet, reverse a blockchain transaction, access a signing-provider account, or give legal advice.

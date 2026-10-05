@@ -1134,6 +1134,7 @@ function VerifyProof() {
           DAGIT
         </a>
         <p>One private version. Independently checked.</p>
+        <a className="footer-link" href="/legal">Service notices</a>
       </footer>
     </main>
   );
@@ -1374,6 +1375,7 @@ function Home() {
         </a>
         <span className="footer-product-name">Digital Asset Guarantee &amp; Integrity Tool</span>
         <p>Your file. Your copy. Same version.</p>
+        <a className="footer-link" href="/legal">Service notices</a>
         <span>
           Proof records a file fingerprint. It does not establish ownership,
           authorship, legal validity, identity, or truth.
@@ -1398,6 +1400,56 @@ function AnalyticsConsent() {
       </div>
     </aside>
   );
+}
+
+function LegalNotices() {
+  return <main className="legal-page">
+    <nav className="site-nav" aria-label="Main navigation">
+      <a className="wordmark" href="/">DAGIT</a>
+      <span className="product-name">Digital Asset Guarantee &amp; Integrity Tool</span>
+      <a className="button button-secondary nav-wallet" href="/">Back to DAGIT</a>
+    </nav>
+    <section className="legal-intro">
+      <p className="eyebrow">Service notices · effective 5 October 2026</p>
+      <h1>Clear product boundaries.</h1>
+      <p>DAGIT confirms whether private file versions match. It is not a document store, signing provider, wallet custodian, identity check or legal advice service.</p>
+      <p>Support, privacy, deletion and product-security requests: <a href="mailto:support@macula.co.za">support@macula.co.za</a>.</p>
+    </section>
+    <section className="legal-grid" aria-label="DAGIT service notices">
+      <article>
+        <h2>Terms of use</h2>
+        <p>Use DAGIT only for files and workflows you are entitled to use. Check every wallet network and fee prompt yourself. Keep your own document, signing and evidence records.</p>
+        <p>A proof records a fingerprint and a public blockchain transaction. It does not prove identity, authority, ownership, authorship, delivery, consent, legal execution, truth or enforceability.</p>
+      </article>
+      <article>
+        <h2>Privacy</h2>
+        <p>Your selected file stays in your browser. DAGIT does not intentionally upload or store its bytes, filename, content or metadata.</p>
+        <p>When you approve an anchor, the proof commitment, wallet address, transaction and timestamp become public Chain 1404 data. Public blockchain data cannot generally be deleted.</p>
+      </article>
+      <article>
+        <h2>Receipt wording</h2>
+        <p><strong>What a match means:</strong> the selected file matches the fingerprint in the receipt and, where available, its Chain 1404 proof.</p>
+        <p><strong>What it does not mean:</strong> it is not proof of who created, signed, sent, received or owns a file, or whether its content is accurate or legally effective.</p>
+      </article>
+      <article>
+        <h2>Retention and deletion</h2>
+        <p>DAGIT does not keep your selected files. Wallet-owned workspace metadata stays while the workspace is active. The workspace owner can request off-chain metadata deletion through support; valid requests are actioned within 30 days unless limited retention is needed for security, fraud prevention, disputes or legal obligations.</p>
+      </article>
+      <article>
+        <h2>Providers</h2>
+        <p>Vercel hosts the public application. Cloudflare provides DNS, edge security, protected-access and limited workspace metadata services. Google Analytics and Tag Manager operate only when public visitors allow analytics. Chain 1404 and the user’s chosen wallet handle user-approved anchors.</p>
+      </article>
+      <article>
+        <h2>Incident process</h2>
+        <p>For a suspected account, wallet, receipt or product-security problem: stop the affected workflow, preserve the receipt and transaction reference, secure the relevant account or wallet, and contact support. Never email a file, private key, seed phrase, password or signing-provider credential.</p>
+      </article>
+    </section>
+    <footer>
+      <a className="wordmark" href="/">DAGIT</a>
+      <p>Private version confirmation.</p>
+      <span>Digital Asset Guarantee &amp; Integrity Tool</span>
+    </footer>
+  </main>;
 }
 
 function OrganisationRegistration() {
@@ -1512,6 +1564,7 @@ function App() {
     window.location.pathname === "/verify" ||
     window.location.pathname.startsWith("/verify/")
   ) return <><VerifyProof /><AnalyticsConsent /></>;
+  if (window.location.pathname === "/legal") return <LegalNotices />;
   if (window.location.pathname === "/register") return <><OrganisationRegistration /><AnalyticsConsent /></>;
   if (window.location.pathname === "/access") return <><OrganisationAccess /><AnalyticsConsent /></>;
   return <><Home /><AnalyticsConsent /></>;
