@@ -40,7 +40,7 @@ pnpm dev --host 127.0.0.1 --port 4173
 
 ## Read quorum
 
-Wallet configuration uses `https://rpc.blockdag.engineering/`. Verification uses Engineering, CapeDAG, and BDAG-US East and requires two nodes to agree at a fixed-height checkpoint. A disagreement returns unavailable rather than a false verification result.
+Wallet configuration uses `https://rpc.macula.co.za/`. Verification uses Macula, Engineering, and CapeDAG and requires two nodes to agree at a fixed-height checkpoint. A disagreement returns unavailable rather than a false verification result.
 
 ## Release boundary
 

@@ -5,14 +5,14 @@ export const CHAIN_1404 = {
   chainId: '0x57c',
   chainName: 'BlockDAG Mainnet',
   nativeCurrency: { name: 'BDAG', symbol: 'BDAG', decimals: 18 },
-  rpcUrls: ['https://rpc.blockdag.engineering/'],
+  rpcUrls: ['https://rpc.macula.co.za/'],
   blockExplorerUrls: ['https://explorer.blockdag.engineering/']
 } as const;
 
 export const verificationRpcQuorum = [
+  'https://rpc.macula.co.za/',
   'https://rpc.blockdag.engineering/',
-  'https://rpc.capedag.com/',
-  'https://rpc.east.bdag-us.org/'
+  'https://rpc.capedag.com/'
 ] as const;
 
 export type RegisteredProof = { registrant: Address; registeredAt: bigint; manifestDigest: Hex };

@@ -1,4 +1,4 @@
-const endpoints = ['https://rpc.blockdag.engineering/', 'https://rpc.capedag.com/', 'https://rpc.east.bdag-us.org/'];
+const endpoints = ['https://rpc.macula.co.za/', 'https://rpc.blockdag.engineering/', 'https://rpc.capedag.com/'];
 async function rpc(url, method, params = []) {
   const response = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: crypto.randomUUID(), method, params }), signal: AbortSignal.timeout(8000) });
   const body = await response.json();
